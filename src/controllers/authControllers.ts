@@ -5,7 +5,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import Admin from '../models/adminModel';
 import Manager from '../models/managersModel'
-import generateToken from '../utils/generateToken';
+import dotenv from 'dotenv'
+
+dotenv.config();
 
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
@@ -27,10 +29,10 @@ export const registerAdmin = async (req: Request, res: Response) => {
 
   try {
     // Check if any admin already exists
-      const exist = await Admin.findOne();
-      if (exist) {
-        return res.status(409).json({ data: 'Admin already exists' });
-      }
+      // const exist = await Admin.findOne();
+      // if (exist) {
+      //   return res.status(409).json({ data: 'Admin already exists' });
+      // }
     // Check for existing admin with the same email
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
@@ -45,7 +47,8 @@ export const registerAdmin = async (req: Request, res: Response) => {
     const newAdmin = new Admin({ fullname, email, password: hashedPassword });
     await newAdmin.save();
 
-
+    console.log({JWT_SECRET});
+    
     // Generate token
     const token = jwt.sign({ id: newAdmin._id.toString()}, JWT_SECRET, { expiresIn: '1d' });
 
@@ -67,7 +70,7 @@ export const registerAdmin = async (req: Request, res: Response) => {
 // Login Controller
 export const Login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
-
+  let isAdmin = true;
   try {
     // Find the user in Admin model
     let user = await Admin.findOne({ email });
@@ -75,7 +78,9 @@ export const Login = async (req: Request, res: Response) => {
     // If not found, check Manager model
     if (!user) {
       user = await Manager.findOne({ email });
+      isAdmin = false;
     }
+
 
     // If user not found in either model
     if (!user) {
@@ -101,11 +106,12 @@ export const Login = async (req: Request, res: Response) => {
         status: 200,
         data: {
           token,
-          user: { id: user._id, email: user.email,}
+          user: { id: user._id, email: user.email,},
+          isAdmin
         }
       });
     } else {
-      throw new Error('JWT_SECRET is not defined');
+      throw new Error('JWT_SECRET is not defined' + JWT_SECRET);
     }
   } catch (error) {
     if (error instanceof Error) {

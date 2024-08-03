@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon dist/app.js",
+    "dev": "tsc && nodemon dist/app.js",
     "build": "tsc",
-    "start": "node dist/app.js",
-    "type": "module"
+    "start": " node dist/app.js"
+   
   },
   "keywords": [],
   "author": "",
