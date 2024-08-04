@@ -27,7 +27,9 @@ const ManagerSchema: Schema = new Schema({
     ref: 'Center', // Referencing the Center model
     required: true,
     },
-});
+},
+{timestamps: true}
+);
 
 const Manager = mongoose.model<IManagers>('Manager', ManagerSchema);
 export default Manager;

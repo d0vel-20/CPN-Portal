@@ -29,10 +29,10 @@ export const registerAdmin = async (req: Request, res: Response) => {
 
   try {
     // Check if any admin already exists
-      // const exist = await Admin.findOne();
-      // if (exist) {
-      //   return res.status(409).json({ data: 'Admin already exists' });
-      // }
+      const exist = await Admin.findOne();
+      if (exist) {
+        return res.status(409).json({ data: 'Admin already exists' });
+      }
     // Check for existing admin with the same email
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
@@ -50,7 +50,7 @@ export const registerAdmin = async (req: Request, res: Response) => {
     console.log({JWT_SECRET});
     
     // Generate token
-    const token = jwt.sign({ id: newAdmin._id.toString()}, JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: newAdmin._id.toString(), type: 'admin'}, JWT_SECRET, { expiresIn: '1d' });
 
 
     res.status(201).json({
@@ -96,7 +96,7 @@ export const Login = async (req: Request, res: Response) => {
     // Generate token
     if (JWT_SECRET) {
       const token = jwt.sign(
-        { id: user._id.toString() }, // Include role if needed
+        { id: user._id.toString(), type: isAdmin? 'admin' : 'manager' }, 
         JWT_SECRET,
         { expiresIn: '1d' }
       );
@@ -121,4 +121,5 @@ export const Login = async (req: Request, res: Response) => {
     }
   }
 };
+
 

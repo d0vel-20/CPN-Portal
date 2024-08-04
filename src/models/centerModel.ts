@@ -19,7 +19,9 @@ const CenterSchema: Schema = new Schema({
         type: String,
         required: true,
     },
-});
+},
+{timestamps: true}
+);
 
 const Center = mongoose.model<ICenter>('Center', CenterSchema);
 export default Center;

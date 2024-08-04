@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
+import profileRoutes from './routes/profileRoutes';
 import connectDB from './database/database';
 
 const app = express()
@@ -27,6 +28,7 @@ const startApp = async () => {
 
     // Use the authentication routes
     app.use('/api/auth', authRoutes);
+    app.use('/api/profile', profileRoutes)
 
 
       // 404 route

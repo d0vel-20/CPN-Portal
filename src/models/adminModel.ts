@@ -1,3 +1,4 @@
+import { timeStamp } from 'console';
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 // Define the interface for the Admin document
@@ -23,7 +24,10 @@ const AdminSchema: Schema = new Schema({
     type: String,
     required: true,
   },
-});
+  
+},
+{timestamps: true}
+);
 
 
 const Admin = mongoose.model<IAdmin>('Admin', AdminSchema);
