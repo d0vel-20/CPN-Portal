@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import profileRoutes from './routes/profileRoutes';
 import connectDB from './database/database';
+import { json } from 'stream/consumers';
 
 const app = express()
 dotenv.config();
@@ -29,6 +30,10 @@ const startApp = async () => {
     // Use the authentication routes
     app.use('/api/auth', authRoutes);
     app.use('/api/profile', profileRoutes)
+
+    app.get('/cron', (req, res) =>{
+        res.status(200).json({ data: 'append' });
+    } ) 
 
 
       // 404 route
