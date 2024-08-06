@@ -1,5 +1,6 @@
 import Center from "../../models/centerModel";
 import { Request, Response } from 'express';
+import { getUser } from '../../utils/getUser';
 
 // create center
 export const createCenter = async (req: Request, res: Response) =>{
@@ -11,6 +12,10 @@ export const createCenter = async (req: Request, res: Response) =>{
 }
 
     try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
         // create a new center
         const newCenter = new Center({
             name, location, code,
@@ -21,11 +26,8 @@ export const createCenter = async (req: Request, res: Response) =>{
 
         return res.status(201).json({
             status: 201,
-            data:{
-                newCenter,
-                message: 'Center Created Successfully',
-            }
-        })
+            data: newCenter
+        });
     } catch (error) {
         console.error('Error Creating Center:', error);
         return res.status(500).json({ data: 'Internal Server error'})
@@ -36,6 +38,10 @@ export const createCenter = async (req: Request, res: Response) =>{
 // get all centers
 export const getAllCenters = async (req: Request, res: Response) => {
     try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
         // Retrieve all centers from the database
         const centers = await Center.find();
 
@@ -58,6 +64,10 @@ export const getCenterById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
         // Find the center by ID
         const center = await Center.findById(id);
 
@@ -90,6 +100,10 @@ export const editCenter = async (req: Request, res: Response) => {
     }
 
     try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
         // Find the center by ID and update
         const updatedCenter = await Center.findByIdAndUpdate(
             id,
@@ -119,6 +133,10 @@ export const deleteCenter = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
         // Find the center by ID and delete
         const deletedCenter = await Center.findByIdAndDelete(id);
 
