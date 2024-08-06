@@ -1,6 +1,7 @@
 import Center from "../../models/centerModel";
 import { Request, Response } from 'express';
 import { getUser } from '../../utils/getUser';
+import Manager from "../../models/managersModel";
 
 // create center
 export const createCenter = async (req: Request, res: Response) =>{
@@ -156,3 +157,52 @@ export const deleteCenter = async (req: Request, res: Response) => {
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 };
+
+// create manager endpoints
+export const createManager = async (req: Request, res:Response)=>{
+    const {fullname, email, password, centerId} = req.body;
+
+    // Validate input
+    if (!fullname || !email || !password || !centerId) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        // check if the center exists
+        const center = await Center.findById(centerId);
+        if(!center){
+            return res.status(404).json({
+                status: 404,
+                data: 'Center not found'
+            })
+        }
+
+        // create a new manager
+        const newManager = new Manager({
+            fullname,
+            email,
+            password,
+            center: centerId
+        });
+
+        // Save the manager to the database
+        await newManager.save();
+
+
+        return res.status(201).json({
+            status: 201,
+            data: {
+                newManager,
+                message: 'Manager Created Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Creating Manager:', error);
+        return res.status(500).json({ data: 'Internal Server Error' });
+    }
+}
