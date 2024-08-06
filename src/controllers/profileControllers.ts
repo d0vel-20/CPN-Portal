@@ -3,7 +3,7 @@ import Admin from '../models/adminModel';
 import { get } from 'http';
 import { getUser } from '../utils/getUser';
 
-const getAdminProfile = async (req: Request, res: Response) => {
+export const getAdminProfile = async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
     if (!user) {
@@ -19,5 +19,3 @@ const getAdminProfile = async (req: Request, res: Response) => {
   }
 };
 
-
-export default getAdminProfile;
