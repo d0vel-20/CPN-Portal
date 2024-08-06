@@ -19,4 +19,5 @@ const getAdminProfile = async (req: Request, res: Response) => {
   }
 };
 
+
 export default getAdminProfile;

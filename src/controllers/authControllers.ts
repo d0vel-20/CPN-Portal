@@ -29,10 +29,10 @@ export const registerAdmin = async (req: Request, res: Response) => {
 
   try {
     // Check if any admin already exists
-      const exist = await Admin.findOne();
-      if (exist) {
-        return res.status(409).json({ data: 'Admin already exists' });
-      }
+      // const exist = await Admin.findOne();
+      // if (exist) {
+      //   return res.status(409).json({ data: 'Admin already exists' });
+      // }
     // Check for existing admin with the same email
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
