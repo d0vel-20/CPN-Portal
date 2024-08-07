@@ -206,3 +206,83 @@ export const createManager = async (req: Request, res:Response)=>{
         return res.status(500).json({ data: 'Internal Server Error' });
     }
 }
+
+// get all managers
+export const getAllManagers = async (req: Request, res: Response) => {
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+        // Fetch all managers from the database
+        const managers = await Manager.find().populate('center'); // Populate center reference if needed
+
+        return res.status(200).json({
+            status: 200,
+            data: {
+                managers,
+                message: 'Managers Retrieved Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Retrieving Managers:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+
+// delete managers
+export const deleteManager = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+        // Find and delete the manager by ID
+        const manager = await Manager.findByIdAndDelete(id);
+        if (!manager) {
+            return res.status(404).json({ message: 'Manager not found' });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: {
+                message: 'Manager Deleted Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Deleting Manager:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+// get individual mangers
+export const getManagerById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+        // Find the manager by ID
+        const manager = await Manager.findById(id).populate('center'); // Populate center reference if needed
+
+        if (!manager) {
+            return res.status(404).json({ message: 'Manager not found' });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: {
+                manager,
+                message: 'Manager Retrieved Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Retrieving Manager:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
