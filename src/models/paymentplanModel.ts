@@ -28,7 +28,7 @@ const PaymentplanSchema: Schema = new Schema({
   course_id: {
     type: String,
     required: true,
-    ref: ''
+    ref: 'Course'
   },
   installments: {
     type: Number,

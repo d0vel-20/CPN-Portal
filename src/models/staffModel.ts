@@ -1,0 +1,48 @@
+import { timeStamp } from 'console';
+import mongoose, { Schema, Document, Types } from 'mongoose';
+
+
+// Define interface
+export interface IStaff extends Document {
+    _id: Types.ObjectId;
+    fullname: string;
+    email: string;
+    phone: number;
+    centerId: mongoose.Schema.Types.ObjectId;
+    courses: Types.Array<Types.ObjectId>;
+    salary: number;
+}
+
+const StaffShema: Schema = new Schema({
+    fullname:{
+        type: String,
+        required: true,
+    },
+    email:{
+        type: String,
+        required: true,
+        unique: true,   
+    },
+    phone:{
+        type: Number,
+        required: true,
+    },
+    centerId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Center', // Referencing the Center model
+        required: true,
+    },
+    courses: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Course',
+    }],
+    salary:{
+        type: Number,
+        required: true,
+    },
+},
+{timestamps: true}
+);
+
+const Staff = mongoose.model<IStaff>('Staff', StaffShema);
+export default Staff;
