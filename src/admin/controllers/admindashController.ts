@@ -408,7 +408,7 @@ export const createCourse = async (req: Request, res: Response) => {
 
     // Validate input
     if (!title || duration === undefined || amount === undefined) {
-        return res.status(400).json({ message: 'All fields are required' });
+        return res.status(400).json({ data: 'All fields are required', status: 400 });
     }
 
     try {
@@ -477,27 +477,59 @@ export const editCourse = async (req: Request, res: Response) => {
 // get all courses
 export const getAllCourses = async (req: Request, res: Response) => {
     try {
-        const courses = await Course.find();
+
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        // Get page and limit from query parameters
+        const page = parseInt(req.query.page as string, 10) || 1; // Default to page 1 if not provided
+        const limit = parseInt(req.query.limit as string, 10) || 10; // Default to 10 items per page if not provided
+
+        // Validate page and limit
+        if (page < 1 || limit < 1) {
+            return res.status(400).json({ data: 'Invalid page or limit', status: 400 });
+        }
+
+        // Calculate the number of items to skip
+        const skip = (page - 1) * limit;
+
+        // Get the total number of courses
+        const totalCourses = await Course.countDocuments();
+
+        // Fetch the courses with pagination
+        const courses = await Course.find()
+            .skip(skip)
+            .limit(limit);
 
         return res.status(200).json({
             status: 200,
             data: {
                 courses,
+                totalCourses,
+                currentPage: page,
+                totalPages: Math.ceil(totalCourses / limit),
                 message: 'Courses Retrieved Successfully',
             }
         });
     } catch (error) {
         console.error('Error Retrieving Courses:', error);
-        return res.status(500).json({ data: 'Internal Server Error', status: 500, });
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };
-
 
 // get individual course
 export const getCourseById = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
+
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
         const course = await Course.findById(id);
 
         if (!course) {
@@ -522,6 +554,11 @@ export const deleteCourse = async (req: Request, res: Response) => {
     const { id } = req.params;
 
     try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
         const deletedCourse = await Course.findByIdAndDelete(id);
 
         if (!deletedCourse) {

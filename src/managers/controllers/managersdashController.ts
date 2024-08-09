@@ -8,21 +8,29 @@ import Student from "../../models/studentModel";
 
 // create student
 export const createStudent = async (req: Request, res: Response) => {
-    const { fullname, email, phone, centerId, courses, reg_date } = req.body;
+    const { fullname, email, phone, reg_date, birth_date, student_id } = req.body;
 
     // Validate input
-    if (!fullname || !email || !phone || !centerId || !reg_date) {
-        return res.status(400).json({ message: 'All fields are required' });
+    if (!fullname || !email || !phone || !reg_date || !birth_date || !student_id) {
+        return res.status(400).json({ data: 'All fields are required', status: 400 });
     }
 
     try {
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const center = user.user.center;
+
         const newStudent = new Student({
             fullname,
             email,
             phone,
-            centerId,
-            courses,
+            center,
             reg_date,
+            birth_date,
+            student_id,
         });
 
         await newStudent.save();
