@@ -1,4 +1,5 @@
 import Center from "../../models/centerModel";
+import Course from "../../models/courseModel";
 import { Request, Response } from 'express';
 import { getUser } from '../../utils/getUser';
 import Manager from "../../models/managersModel";
@@ -399,3 +400,143 @@ export const editManager = async (req: Request, res: Response) =>{
     }
 }
 
+// ==========================================Courses===============================
+
+// create courses
+export const createCourse = async (req: Request, res: Response) => {
+    const { title, duration, amount } = req.body;
+
+    // Validate input
+    if (!title || duration === undefined || amount === undefined) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+       
+
+        const newCourse = new Course({
+            title,
+            duration,
+            amount,
+        });
+
+        await newCourse.save();
+
+        return res.status(201).json({
+            status: 201,
+            data: {
+                newCourse,
+                message: 'Course Created Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Creating Course:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500,  });
+    }
+};
+
+// edit course
+export const editCourse = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { title, duration, amount } = req.body;
+
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const updatedCourse = await Course.findByIdAndUpdate(
+            id,
+            { title, duration, amount },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedCourse) {
+            return res.status(404).json({ data: 'Course not found', status: 404 });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: {
+                updatedCourse,
+                message: 'Course Updated Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Updating Course:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500, });
+    }
+};
+
+
+// get all courses
+export const getAllCourses = async (req: Request, res: Response) => {
+    try {
+        const courses = await Course.find();
+
+        return res.status(200).json({
+            status: 200,
+            data: {
+                courses,
+                message: 'Courses Retrieved Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Retrieving Courses:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500, });
+    }
+};
+
+
+// get individual course
+export const getCourseById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const course = await Course.findById(id);
+
+        if (!course) {
+            return res.status(404).json({ data: 'Course not found', status: 404, });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: {
+                course,
+                message: 'Course Retrieved Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Retrieving Course:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500, });
+    }
+};
+
+// delete courses
+export const deleteCourse = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const deletedCourse = await Course.findByIdAndDelete(id);
+
+        if (!deletedCourse) {
+            return res.status(404).json({ data: 'Course not found', status: 404, });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: {
+                deletedCourse,
+                message: 'Course Deleted Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Deleting Course:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500, });
+    }
+};

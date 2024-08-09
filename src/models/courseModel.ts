@@ -13,12 +13,12 @@ const CourseSchema: Schema = new Schema({
     required: true,
     },
     duration: {
-    type: Number,
+    type: String,
     required: true,
     unique: true,
     },
     amount: {
-    type: Number,
+    type: String,
     required: true,
     },
 },

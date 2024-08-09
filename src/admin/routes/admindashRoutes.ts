@@ -1,5 +1,5 @@
 import express from 'express';
-import { createCenter, editCenter, deleteCenter, getAllCenters, getCenterById, createManager, getAllManagers, deleteManager, getManagerById, editManager } from '../controllers/admindashController';
+import { createCenter, editCenter, deleteCenter, getAllCenters, getCenterById, createManager, getAllManagers, deleteManager, getManagerById, editManager,  createCourse, editCourse, getAllCourses, getCourseById, deleteCourse } from '../controllers/admindashController';
 import verifyToken  from '../../middlewares/authMiddleware';
 const router = express.Router();
 
@@ -20,7 +20,12 @@ router.delete('/managers/:id', verifyToken, deleteManager);
 router.get('/managers/:id', verifyToken, getManagerById);
 router.patch('/managers/:id', verifyToken, editManager)
 
-// Get staff
+// Admin Create Courses
+router.post('/courses', verifyToken, createCourse);
+router.patch('/courses/:id', verifyToken, editCourse);
+router.get('/courses', verifyToken, getAllCourses);
+router.get('/courses/:id', verifyToken, getCourseById);
+router.delete('/courses/:id', verifyToken, deleteCourse);
 
 
 // Get students
