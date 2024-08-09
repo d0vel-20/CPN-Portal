@@ -1,5 +1,5 @@
 git add .
 
-git commit -m "login and register endpoint"
+git commit -m "another"
 
 git push origin main

@@ -15,7 +15,8 @@ export const getAdminProfile = async (req: Request, res: Response) => {
     throw new Error('User is not an admin');
   } catch (error) {
     console.error(error);
-    res.status(500).json({ data: 'Internal Server Error' });
+    return res.status(500).json({ data: 'invalid or expired token', status: 400});
   }
 };
+
 

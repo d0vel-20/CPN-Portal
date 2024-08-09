@@ -5,6 +5,7 @@ export interface IManagers extends Document {
     fullname: string;
     email: string;
     password: string;
+    phone: string;
     center: mongoose.Schema.Types.ObjectId;
 }
 
@@ -19,6 +20,10 @@ const ManagerSchema: Schema = new Schema({
     unique: true,
     },
     password: {
+    type: String,
+    required: true,
+    },
+    phone: {
     type: String,
     required: true,
     },

@@ -2,14 +2,23 @@ import Center from "../../models/centerModel";
 import { Request, Response } from 'express';
 import { getUser } from '../../utils/getUser';
 import Manager from "../../models/managersModel";
+import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import Student from "../../models/studentModel";
+import dotenv from 'dotenv'
+
+dotenv.config();
 
 // create center
 export const createCenter = async (req: Request, res: Response) =>{
-    const {name, location, code } = req.body;
+    const {name, location, code,} = req.body;
 
     // Validate input
-    if (!name || !location || !code) {
-    return res.status(400).json({ message: 'All fields are required' });
+    if (!name || !location || !code ) {
+    return res.status(400).json({ 
+        data: 'All fields are required',
+        status: 400,
+    });
 }
 
     try {
@@ -31,7 +40,7 @@ export const createCenter = async (req: Request, res: Response) =>{
         });
     } catch (error) {
         console.error('Error Creating Center:', error);
-        return res.status(500).json({ data: 'Internal Server error'})
+        return res.status(500).json({ status: 500, data: 'Internal Server error'})
     }
 
 }
@@ -46,6 +55,7 @@ export const getAllCenters = async (req: Request, res: Response) => {
         // Retrieve all centers from the database
         const centers = await Center.find();
 
+
         return res.status(200).json({
             status: 200,
             data: {
@@ -55,7 +65,10 @@ export const getAllCenters = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error Retrieving Centers:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ 
+            data: 'Internal Server Error',
+            status: 500
+         });
     }
 };
 
@@ -72,20 +85,35 @@ export const getCenterById = async (req: Request, res: Response) => {
         // Find the center by ID
         const center = await Center.findById(id);
 
+        // find the manager
+        const manager = (await Manager.findOne({ center: id }).exec()) ?? {};
+
+        // count all number of students
+        const studentCount = await Student.countDocuments({ center: id }).exec();
+
+
         if (!center) {
-            return res.status(404).json({ message: 'Center not found' });
+            return res.status(404).json({ 
+                data: 'Center not found',
+                status: 404,
+             });
         }
 
         return res.status(200).json({
             status: 200,
             data: {
                 center,
+                manager,
+                studentCount,
                 message: 'Center Retrieved Successfully',
             }
         });
     } catch (error) {
         console.error('Error Retrieving Center:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ 
+            data: 'Internal Server Error',
+            status: 500
+         });
     }
 };
 
@@ -97,7 +125,10 @@ export const editCenter = async (req: Request, res: Response) => {
 
     // Validate input
     if (!name && !location && !code) {
-        return res.status(400).json({ message: 'At least one field is required to update' });
+        return res.status(400).json({ 
+            data: 'Atleast one field is required to updte',
+            status: 400,
+         });
     }
 
     try {
@@ -113,7 +144,10 @@ export const editCenter = async (req: Request, res: Response) => {
         );
 
         if (!updatedCenter) {
-            return res.status(404).json({ message: 'Center not found' });
+            return res.status(404).json({ 
+                status: 404,
+                data: 'Center not found'
+            });
         }
 
         return res.status(200).json({
@@ -125,7 +159,10 @@ export const editCenter = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error Updating Center:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({
+            status: 500,
+            data: 'Internal Server Error'
+        });
     }
 };
 
@@ -142,7 +179,7 @@ export const deleteCenter = async (req: Request, res: Response) => {
         const deletedCenter = await Center.findByIdAndDelete(id);
 
         if (!deletedCenter) {
-            return res.status(404).json({ message: 'Center not found' });
+            return res.status(404).json({ status: 404, data: 'Center not found' });
         }
 
         return res.status(200).json({
@@ -154,17 +191,27 @@ export const deleteCenter = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error Deleting Center:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ 
+            data: 'Internal Server Error',
+            status: 500
+        });
     }
 };
 
+
+
+
+
+// =============================================================
+
 // create manager endpoints
 export const createManager = async (req: Request, res:Response)=>{
-    const {fullname, email, password, centerId} = req.body;
+    
+    const {fullname, email, phone, centerId} = req.body;
 
     // Validate input
-    if (!fullname || !email || !password || !centerId) {
-        return res.status(400).json({ message: 'All fields are required' });
+    if (!fullname || !email || !phone || !centerId) {
+        return res.status(400).json({ status: 400, data: 'All fields are required' });
     }
 
     try {
@@ -182,17 +229,24 @@ export const createManager = async (req: Request, res:Response)=>{
             })
         }
 
+        // hash the default password
+        const defaultPassword = process.env.DEFAULT_PASSWORD;
+        if (!defaultPassword) {
+            throw new Error('Default password is not set');
+        }
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
         // create a new manager
         const newManager = new Manager({
             fullname,
             email,
-            password,
+            password: hashedPassword,
+            phone,
             center: centerId
         });
 
         // Save the manager to the database
         await newManager.save();
-
 
         return res.status(201).json({
             status: 201,
@@ -203,7 +257,7 @@ export const createManager = async (req: Request, res:Response)=>{
         });
     } catch (error) {
         console.error('Error Creating Manager:', error);
-        return res.status(500).json({ data: 'Internal Server Error' });
+        return res.status(500).json({ data: 'Internal Server Error', status: 500, });
     }
 }
 
@@ -215,7 +269,7 @@ export const getAllManagers = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
         // Fetch all managers from the database
-        const managers = await Manager.find().populate('center'); // Populate center reference if needed
+        const managers = await Manager.find().populate('center');
 
         return res.status(200).json({
             status: 200,
@@ -226,7 +280,10 @@ export const getAllManagers = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error Retrieving Managers:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ 
+            data: 'Internal Server Error',
+            status: 500
+         });
     }
 };
 
@@ -243,7 +300,7 @@ export const deleteManager = async (req: Request, res: Response) => {
         // Find and delete the manager by ID
         const manager = await Manager.findByIdAndDelete(id);
         if (!manager) {
-            return res.status(404).json({ message: 'Manager not found' });
+            return res.status(404).json({ data: 'Manager not found', status: 404 });
         }
 
         return res.status(200).json({
@@ -254,7 +311,10 @@ export const deleteManager = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error Deleting Manager:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ 
+            data: 'Internal Server Error',
+            status: 500
+         });
     }
 };
 
@@ -271,7 +331,7 @@ export const getManagerById = async (req: Request, res: Response) => {
         const manager = await Manager.findById(id).populate('center'); // Populate center reference if needed
 
         if (!manager) {
-            return res.status(404).json({ message: 'Manager not found' });
+            return res.status(404).json({ data: 'Manager not found', status: 404, });
         }
 
         return res.status(200).json({
@@ -283,6 +343,59 @@ export const getManagerById = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error Retrieving Manager:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ 
+            data: 'Internal Server Error',
+            status: 500
+         });
     }
 };
+
+export const editManager = async (req: Request, res: Response) =>{
+    const {id}  = req.params;
+    const {fullname, email, phone, centerId} = req.body;
+
+
+    // Validate input
+    if (!fullname || !email || !phone || !centerId) {
+        return res.status(400).json({
+            status: 400,
+            data: 'All fields are required'
+        });
+    }
+
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        // find the center by id
+        const editedManager = await Manager.findByIdAndUpdate(
+            id,
+            {fullname, email, phone, centerId},
+            { new: true, runValidators: true }
+        );
+
+        if(!editedManager){
+            return res.status(404).json({
+                status:404,
+                data: 'Manager not found'
+            });
+        }
+
+        return res.status(200).json({
+            status:200,
+            data:{
+                editedManager,
+                message: 'Center Updated Successfully'
+            }
+        });
+    } catch (error) {
+        console.error('Error Editing Manager:', error);
+        return res.status(500).json({
+            status: 500,
+            data: 'Internal Server Error'
+        })
+    }
+}
+
