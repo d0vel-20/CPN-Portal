@@ -88,7 +88,13 @@ export const Login = async (req: Request, res: Response) => {
     }
 
     // Check password
-    const isMatch = await bcrypt.compare(password, user.password);
+    let isMatch = false;
+    if(isAdmin){
+      isMatch = await bcrypt.compare(password, user.password);
+    }else{
+      isMatch = await bcrypt.compare(password, user.password);
+    }
+
     if (!isMatch) {
       return res.status(400).json({ data: 'Invalid credentials' });
     }
