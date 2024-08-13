@@ -88,7 +88,7 @@ export const Login = async (req: Request, res: Response) => {
     }
 
     // Check password
-    let isMatch = false;
+    let isMatch = true;
     if(isAdmin){
       isMatch = await bcrypt.compare(password, user.password);
     }else{
