@@ -12,6 +12,8 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
+
+
 // Register Admin
 export const registerAdmin = async (req: Request, res: Response) => {
   const { fullname, email, password, accessCode } = req.body;
@@ -73,11 +75,11 @@ export const Login = async (req: Request, res: Response) => {
   let isAdmin = true;
   try {
     // Find the user in Admin model
-    let user = await Admin.findOne({ email });
+    let user = await Admin.findOne({ email, password });
 
     // If not found, check Manager model
     if (!user) {
-      user = await Manager.findOne({ email });
+      user = await Manager.findOne({ email, password });
       isAdmin = false;
     }
 
@@ -88,16 +90,10 @@ export const Login = async (req: Request, res: Response) => {
     }
 
     // Check password
-    let isMatch = true;
-    if(isAdmin){
-      isMatch = await bcrypt.compare(password, user.password);
-    }else{
-      isMatch = await bcrypt.compare(password, user.password);
-    }
-
-    if (!isMatch) {
-      return res.status(400).json({ data: 'Invalid credentials' });
-    }
+    // const isMatch = await bcrypt.compare(password, user.password);
+    // if (!isMatch) {
+    //   return res.status(400).json({ data: 'Invalid credentials' });
+    // }
 
     // Generate token
     if (JWT_SECRET) {
