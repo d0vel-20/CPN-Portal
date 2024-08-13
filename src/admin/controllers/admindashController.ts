@@ -243,7 +243,7 @@ export const createManager = async (req: Request, res:Response)=>{
             email,
             password: hashedPassword,
             phone,
-            center: centerId
+            centerId: centerId
         });
 
         // Save the manager to the database
@@ -270,7 +270,7 @@ export const getAllManagers = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
         // Fetch all managers from the database
-        const managers = await Manager.find().populate('Center');
+        const managers = await Manager.find().populate('centerId');
 
         return res.status(200).json({
             status: 200,
@@ -329,7 +329,7 @@ export const getManagerById = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
         // Find the manager by ID
-        const manager = await Manager.findById(id).populate('center'); // Populate center reference if needed
+        const manager = await Manager.findById(id).populate('centerId'); // Populate center reference if needed
 
         if (!manager) {
             return res.status(404).json({ data: 'Manager not found', status: 404, });
