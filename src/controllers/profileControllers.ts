@@ -20,3 +20,22 @@ export const getAdminProfile = async (req: Request, res: Response) => {
 };
 
 
+
+// Mock task function
+const performCronJobTask = async () => {
+    // Perform your task here, e.g., clean up old data, send emails, etc.
+    console.log('Cron job task performed');
+};
+
+// Cron Job Endpoint
+export const cronJobEndpoint = async (req: Request, res: Response) => {
+    try {
+        await performCronJobTask();
+        return res.status(200).json({ message: 'Cron job executed successfully' });
+    } catch (error) {
+        console.error('Error executing cron job:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+

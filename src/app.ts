@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import profileRoutes from './routes/profileRoutes';
+import cronJobEndpoint from './routes/profileRoutes';
 import admindashRoutes from './admin/routes/admindashRoutes'
 import managersdashRoutes from './managers/routes/managersdashRoutes';
 import connectDB from './database/database';
@@ -35,10 +36,8 @@ const startApp = async () => {
     app.use('/api/admin', admindashRoutes)
     app.use('/api/manager', managersdashRoutes)
 
-    // cron job endpoint
-    app.get('/cron', (req, res) =>{
-        res.status(200).json({ data: 'append' });
-    } ) 
+    // Cron Job Route
+    app.get('/cron-job', cronJobEndpoint);
 
 
       // 404 route
