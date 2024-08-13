@@ -50,22 +50,21 @@ export const createStudent = async (req: Request, res: Response) => {
 
 // Edit Student
 export const editStudent = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { fullname, email, phone, centerId, courses, reg_date } = req.body;
+    const { studentId } = req.params;
+    const updates = req.body;
 
     try {
-        const student = await Student.findById(id);
-        if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        if (fullname) student.fullname = fullname;
-        if (email) student.email = email;
-        if (phone) student.phone = phone;
-        if (centerId) student.centerId = centerId;
-        if (courses) student.courses = courses;
-        if (reg_date) student.reg_date = reg_date;
+        const student = await Student.findOne({ _id: studentId, center: user.user.centerId });
+        if (!student) {
+            return res.status(404).json({ data: 'Student Not Found', status: 404 });
+        }
 
+        Object.assign(student, updates);
         await student.save();
 
         return res.status(200).json({
@@ -76,70 +75,76 @@ export const editStudent = async (req: Request, res: Response) => {
             }
         });
     } catch (error) {
-        console.error('Error Updating Student:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Error Editing Student:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };
 
 // Get All Students
 export const getAllStudents = async (req: Request, res: Response) => {
     try {
-        const students = await Student.find().populate('centerId').populate('courses');
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
 
+        const students = await Student.find({ center: user.user.centerId });
         return res.status(200).json({
             status: 200,
-            data: {
-                students,
-                message: 'Students Retrieved Successfully',
-            }
+            data: students
         });
     } catch (error) {
-        console.error('Error Retrieving Students:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Error Fetching Students:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };
 
-// get Individual student
+// Get Student by ID
 export const getStudentById = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { studentId } = req.params;
 
     try {
-        const student = await Student.findById(id).populate('centerId').populate('courses');
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const student = await Student.findOne({ _id: studentId, center: user.user.centerId });
         if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+            return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
 
         return res.status(200).json({
             status: 200,
-            data: {
-                student,
-                message: 'Student Retrieved Successfully',
-            }
+            data: student
         });
     } catch (error) {
-        console.error('Error Retrieving Student:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Error Fetching Student:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };
 
-// delete students
+// Delete Student
 export const deleteStudent = async (req: Request, res: Response) => {
-    const { id } = req.params;
+    const { studentId } = req.params;
 
     try {
-        const student = await Student.findByIdAndDelete(id);
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const student = await Student.findOneAndDelete({ _id: studentId, center: user.user.centerId });
         if (!student) {
-            return res.status(404).json({ message: 'Student not found' });
+            return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
 
         return res.status(200).json({
             status: 200,
-            data: {
-                message: 'Student Deleted Successfully',
-            }
+            data: { message: 'Student Deleted Successfully' }
         });
     } catch (error) {
         console.error('Error Deleting Student:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };

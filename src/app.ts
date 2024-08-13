@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import profileRoutes from './routes/profileRoutes';
 import admindashRoutes from './admin/routes/admindashRoutes'
+import managersdashRoutes from './managers/routes/managersdashRoutes';
 import connectDB from './database/database';
 import { json } from 'stream/consumers';
 
@@ -32,6 +33,7 @@ const startApp = async () => {
     app.use('/api/auth', authRoutes);
     app.use('/api/profile', profileRoutes)
     app.use('/api/admin', admindashRoutes)
+    app.use('/api/manager', managersdashRoutes)
 
     // cron job endpoint
     app.get('/cron', (req, res) =>{

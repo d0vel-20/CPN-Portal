@@ -8,9 +8,9 @@ export interface IStudent extends Document {
     fullname: string;
     email: string;
     phone: number;
-    centerId: mongoose.Schema.Types.ObjectId;
-    courses: Types.Array<Types.ObjectId>;
     reg_date: string;
+    birth_date: string;
+    student_id: string;
 }
 
 const StudentShema: Schema = new Schema({
@@ -27,19 +27,18 @@ const StudentShema: Schema = new Schema({
         type: Number,
         required: true,
     },
-    centerId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Center', // Referencing the Center model
-        required: true,
-    },
-    courses: [{
-        type: Schema.Types.ObjectId,
-        ref: 'Course',
-    }],
     reg_date:{
         type: String,
         required: true,
-    }
+    },
+    birth_date:{
+        type: String,
+        required: true,
+    },
+    student_id:{
+        type: String,
+        required: true,
+    },
 },
 {timestamps: true}
 );
