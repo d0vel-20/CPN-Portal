@@ -352,7 +352,7 @@ export const getManagerById = async (req: Request, res: Response) => {
 };
 
 export const editManager = async (req: Request, res: Response) =>{
-    const {id}  = req.params;
+    const { id }  = req.params;
     const {fullname, email, phone, centerId} = req.body;
 
 

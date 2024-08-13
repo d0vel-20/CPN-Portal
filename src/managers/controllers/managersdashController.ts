@@ -21,7 +21,7 @@ export const createStudent = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const center = user.user.center;
+        const center = user.user.centerId;
 
         const newStudent = new Student({
             fullname,
