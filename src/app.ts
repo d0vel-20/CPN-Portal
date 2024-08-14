@@ -4,7 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes';
 import profileRoutes from './routes/profileRoutes';
-import cronJobEndpoint from './routes/profileRoutes';
+import {cronJobEndpoint} from './controllers/profileControllers';
 import admindashRoutes from './admin/routes/admindashRoutes'
 import managersdashRoutes from './managers/routes/managersdashRoutes';
 import connectDB from './database/database';
