@@ -8,6 +8,7 @@ export interface IStudent extends Document {
     fullname: string;
     email: string;
     phone: number;
+    center: string;
     reg_date: string;
     birth_date: string;
     student_id: string;
@@ -25,6 +26,10 @@ const StudentShema: Schema = new Schema({
     },
     phone:{
         type: Number,
+        required: true,
+    },
+    center:{
+        type: String,
         required: true,
     },
     reg_date:{
