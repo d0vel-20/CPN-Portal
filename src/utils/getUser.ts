@@ -35,7 +35,7 @@ export async function getUser(req: any): Promise <AuthUser | null>{
         return null;
       }
       return {
-        isAdmin,
+        isAdmin,  
         user
       } as AuthUser
 }
