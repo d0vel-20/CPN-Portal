@@ -101,7 +101,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
 
 // Get Student by ID
 export const getStudentById = async (req: Request, res: Response) => {
-    const { Id } = req.params;
+    const { studentId } = req.params;
 
     try {
         const user = await getUser(req);
@@ -109,7 +109,7 @@ export const getStudentById = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const student = await Student.findOne({_id: Id, center: user.user.centerId });
+        const student = await Student.findOne({_id: studentId, center: user.user.centerId });
         if (!student) {
             return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
