@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { getUser } from '../../utils/getUser';
 import Student from "../../models/studentModel";
+import mongoose, { Schema, Document } from 'mongoose';
 
 
 
@@ -85,20 +86,59 @@ export const getAllStudents = async (req: Request, res: Response) => {
     try {
         const user = await getUser(req);
         if (!user || user.isAdmin) {
-          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+            return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const students = await Student.find({ center: user.user.centerId });
+        // Pagination
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+
+        // Filters and Search
+        const filters: any = { center: user.user.centerId };
+
+        // Name filter
+        if (req.query.name) {
+            filters.name = { $regex: req.query.name, $options: 'i' }; // Case-insensitive name search
+        }
+
+        // Center filter (if you allow managers to search for other centers)
+        if (req.query.center) {
+            filters.center = new mongoose.Types.ObjectId(req.query.center as string);
+        }
+
+        // Course filter
+        if (req.query.course) {
+            filters.courses = new mongoose.Types.ObjectId(req.query.course as string); // Assuming 'courses' is an array of ObjectIds
+        }
+
+        // Sorting
+        const sortField = req.query.sortField as string || 'name'; // Default sort by name
+        const sortOrder = req.query.sortOrder === 'desc' ? -1 : 1; // Default ascending order
+
+        // Fetch Students with pagination, filters, and sorting
+        const students = await Student.find(filters)
+            .sort({ [sortField]: sortOrder })
+            .skip(skip)
+            .limit(limit);
+
+        // Count total documents for pagination
+        const totalStudents = await Student.countDocuments(filters);
+
         return res.status(200).json({
             status: 200,
-            data: students
+            data: {
+                students,
+                total: totalStudents,
+                page,
+                pages: Math.ceil(totalStudents / limit)
+            }
         });
     } catch (error) {
         console.error('Error Fetching Students:', error);
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };
-
 // Get Student by ID
 export const getStudentById = async (req: Request, res: Response) => {
     const { id } = req.params;
