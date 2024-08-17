@@ -8,7 +8,7 @@ export interface IStaff extends Document {
     fullname: string;
     email: string;
     phone: number;
-    centerId: mongoose.Schema.Types.ObjectId;
+    center: string;
     courses: Types.Array<Types.ObjectId>;
     salary: number;
 }
@@ -27,9 +27,8 @@ const StaffShema: Schema = new Schema({
         type: Number,
         required: true,
     },
-    centerId:{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Center', // Referencing the Center model
+    center:{
+        type: String,
         required: true,
     },
     courses: [{
