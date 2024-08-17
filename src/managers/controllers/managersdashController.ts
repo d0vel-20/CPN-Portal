@@ -4,6 +4,7 @@ import { getUser } from '../../utils/getUser';
 import Student from "../../models/studentModel";
 import Paymentplan from '../../models/paymentplanModel';
 import { Paginated } from '../../types/pagination.types';
+import Staff from '../../models/staffModel';
 
 
 
@@ -201,6 +202,150 @@ export const deleteStudent = async (req: Request, res: Response) => {
         });
     } catch (error) {
         console.error('Error Deleting Student:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+};
+
+
+// Create Staff
+
+export const createStaff = async (req: Request, res: Response) => {
+    const { fullname, email, phone, courses, salary } = req.body;
+
+    // Validate input
+    if (!fullname || !email || !phone || !courses || !salary) {
+        return res.status(400).json({ data: 'All fields are required', status: 400 });
+    }
+
+    try {
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const center = user.user.centerId;
+
+        const newStaff = new Staff({
+            fullname,
+            email,
+            phone,
+            center,
+            courses,
+            salary,
+        });
+
+        await newStaff.save();
+
+        return res.status(201).json({
+            status: 201,
+            data: {
+                newStaff,
+                message: 'Staff Created Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Creating Staff:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+// get all staff
+export const getAllStaff = async (req: Request, res: Response) => {
+    try {
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const staff = await Staff.find({ center: user.user.centerId });
+        return res.status(200).json({
+            status: 200,
+            data: staff
+        });
+    } catch (error) {
+        console.error('Error Fetching Students:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+};
+
+// get individual staff
+export const getStaffById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const staff = await Staff.findOne({ _id: id, center: user.user.centerId });
+        if (!staff) {
+            return res.status(404).json({ data: 'Staff Not Found', status: 404 });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: staff
+        });
+    } catch (error) {
+        console.error('Error Fetching Staff:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+};
+
+// edit staff
+export const editStaff = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const updates = req.body;
+
+    try {
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const staff = await Staff.findOne({ _id: id, center: user.user.centerId });
+        if (!staff) {
+            return res.status(404).json({ data: 'Staff Not Found', status: 404 });
+        }
+
+        Object.assign(staff, updates);
+        await staff.save();
+
+        return res.status(200).json({
+            status: 200,
+            data: {
+                staff,
+                message: 'Staff Updated Successfully',
+            }
+        });
+    } catch (error) {
+        console.error('Error Editing Staff:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+};
+
+// Delete staff
+export const deleteStaff = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const staff = await Staff.findOneAndDelete({ _id: id, center: user.user.centerId });
+        if (!staff) {
+            return res.status(404).json({ data: 'Staff Not Found', status: 404 });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: { message: 'Staff Deleted Successfully' }
+        });
+    } catch (error) {
+        console.error('Error Deleting Staff:', error);
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };
