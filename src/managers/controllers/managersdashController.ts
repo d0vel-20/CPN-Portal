@@ -23,7 +23,7 @@ export const createStudent = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const center = user.user.center;
+        const center = user.user.centerId;
 
         const newStudent = new Student({
             fullname,
@@ -61,7 +61,7 @@ export const editStudent = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const student = await Student.findOne({ _id: id, center: user.user.center });
+        const student = await Student.findOne({ _id: id, center: user.user.centerId });
         if (!student) {
             return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
@@ -108,7 +108,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
             query.center = center;
         } else if (!user.isAdmin) {
             // If not admin, filter by user's center
-            query.center = user.user.center;
+            query.center = user.user.centerId;
         }else{
             return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
@@ -165,7 +165,7 @@ export const getStudentById = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const student = await Student.findById({_id: id, center: user.user.center });
+        const student = await Student.findById({_id: id, center: user.user.centerId });
         if (!student) {
             return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
@@ -190,7 +190,7 @@ export const deleteStudent = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const student = await Student.findOneAndDelete({ _id: id, center: user.user.center });
+        const student = await Student.findOneAndDelete({ _id: id, center: user.user.centerId });
         if (!student) {
             return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
