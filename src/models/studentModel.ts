@@ -12,6 +12,7 @@ export interface IStudent extends Document {
     reg_date: string;
     birth_date: string;
     student_id: string;
+    plan: Types.Array<Types.ObjectId>;
 }
 
 const StudentShema: Schema = new Schema({
@@ -44,6 +45,10 @@ const StudentShema: Schema = new Schema({
         type: String,
         required: true,
     },
+    plan: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Paymentplan',
+    }]
 },
 {timestamps: true}
 );
