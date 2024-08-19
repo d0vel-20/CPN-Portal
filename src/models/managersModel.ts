@@ -6,7 +6,7 @@ export interface IManagers extends Document {
     email: string;
     password: string;
     phone: string;
-    centerId: mongoose.Schema.Types.ObjectId;
+    center: mongoose.Schema.Types.ObjectId;
 }
 
 const ManagerSchema: Schema = new Schema({
@@ -27,7 +27,7 @@ const ManagerSchema: Schema = new Schema({
     type: String,
     required: true,
     },
-    centerId: {
+    center: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Center', // Referencing the Center model
     required: true,

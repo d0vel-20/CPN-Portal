@@ -329,7 +329,7 @@ export const getManagerById = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
         // Find the manager by ID
-        const manager = await Manager.findById(id).populate('centerId'); // Populate center reference if needed
+        const manager = await Manager.findById(id).populate('center'); // Populate center reference if needed
 
         if (!manager) {
             return res.status(404).json({ data: 'Manager not found', status: 404, });
@@ -577,3 +577,7 @@ export const deleteCourse = async (req: Request, res: Response) => {
         return res.status(500).json({ data: 'Internal Server Error', status: 500, });
     }
 };
+
+// get all staff
+
+

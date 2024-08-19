@@ -24,7 +24,7 @@ export const createStudent = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const center = user.user.centerId;
+        const center = user.user.center;
 
         const newStudent = new Student({
             fullname,
@@ -62,7 +62,7 @@ export const editStudent = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const student = await Student.findOne({ _id: id, center: user.user.centerId });
+        const student = await Student.findOne({ _id: id, center: user.user.center });
         if (!student) {
             return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
@@ -109,7 +109,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
             query.center = center;
         } else if (!user.isAdmin) {
             // If not admin, filter by user's center
-            query.center = user.user.centerId;
+            query.center = user.user.center;
         }else{
             return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
@@ -166,7 +166,7 @@ export const getStudentById = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const student = await Student.findById({_id: id, center: user.user.centerId });
+        const student = await Student.findById({_id: id, center: user.user.center });
         if (!student) {
             return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
@@ -191,7 +191,7 @@ export const deleteStudent = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const student = await Student.findOneAndDelete({ _id: id, center: user.user.centerId });
+        const student = await Student.findOneAndDelete({ _id: id, center: user.user.center });
         if (!student) {
             return res.status(404).json({ data: 'Student Not Found', status: 404 });
         }
@@ -223,7 +223,7 @@ export const createStaff = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const center = user.user.centerId;
+        const center = user.user.center;
 
         const newStaff = new Staff({
             fullname,
@@ -257,7 +257,7 @@ export const getAllStaff = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const staff = await Staff.find({ center: user.user.centerId });
+        const staff = await Staff.find({ center: user.user.center});
         return res.status(200).json({
             status: 200,
             data: staff
@@ -278,7 +278,7 @@ export const getStaffById = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const staff = await Staff.findOne({ _id: id, center: user.user.centerId });
+        const staff = await Staff.findOne({ _id: id, center: user.user.center});
         if (!staff) {
             return res.status(404).json({ data: 'Staff Not Found', status: 404 });
         }
@@ -304,7 +304,7 @@ export const editStaff = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const staff = await Staff.findOne({ _id: id, center: user.user.centerId });
+        const staff = await Staff.findOne({ _id: id, center: user.user.center });
         if (!staff) {
             return res.status(404).json({ data: 'Staff Not Found', status: 404 });
         }
@@ -335,7 +335,7 @@ export const deleteStaff = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const staff = await Staff.findOneAndDelete({ _id: id, center: user.user.centerId });
+        const staff = await Staff.findOneAndDelete({ _id: id, center: user.user.center });
         if (!staff) {
             return res.status(404).json({ data: 'Staff Not Found', status: 404 });
         }
