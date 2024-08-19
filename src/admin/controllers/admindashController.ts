@@ -270,7 +270,7 @@ export const getAllManagers = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
         // Fetch all managers from the database
-        const managers = await Manager.find().populate('centerId');
+        const managers = await Manager.find().populate('center');
 
         return res.status(200).json({
             status: 200,
