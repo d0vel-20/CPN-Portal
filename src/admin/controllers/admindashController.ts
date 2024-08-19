@@ -653,11 +653,11 @@ export const adminGetOneStudent = async (req: Request, res: Response) => {
 export const adminGetAllStudents = async (req: Request, res: Response) => {
     try {
         const user = await getUser(req);
-        if (!user) {
+        if (!user || !user.isAdmin) {
             return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const { page = 1, limit = 10, q, center, course } = req.query;
+        const { page = 1, limit = 10, q, course } = req.query;
 
         const query: any = {};
 
@@ -670,15 +670,6 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
             ];
         }
 
-        // Center filter (only for admin users)
-        if (center && user.isAdmin) {
-            query.center = center;
-        } else if (!user.isAdmin) {
-            // If not admin, filter by user's center
-            query.center = user.user.center;
-        }else{
-            return res.status(401).json({ data: 'Unauthorized', status: 401 });
-        }
 
         // Course filter
         if (course) {
