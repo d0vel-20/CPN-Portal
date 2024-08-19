@@ -6,7 +6,11 @@ import Manager from "../../models/managersModel";
 import bcrypt from 'bcryptjs';
 import mongoose from "mongoose";
 import Student from "../../models/studentModel";
-import dotenv from 'dotenv'
+import dotenv from 'dotenv';
+import Staff from '../../models/staffModel';
+import Paymentplan from '../../models/paymentplanModel';
+import { Paginated } from '../../types/pagination.types';
+
 
 dotenv.config();
 
@@ -578,6 +582,140 @@ export const deleteCourse = async (req: Request, res: Response) => {
     }
 };
 
+
+// get individual staff
+export const adminGetOneStaff = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const staff = await Staff.findOne({ _id: id});
+        if (!staff) {
+            return res.status(404).json({ data: 'Staff Not Found', status: 404 });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: staff
+        });
+    } catch (error) {
+        console.error('Error Fetching Staff:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+};
 // get all staff
+export const adminGetAllStaff = async (req: Request, res: Response) => {
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
 
+        const staff = await Staff.find();
+        return res.status(200).json({
+            status: 200,
+            data: staff
+        });
+    } catch (error) {
+        console.error('Error Fetching Students:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+}
+// get individual student
+export const adminGetOneStudent = async (req: Request, res: Response) => {
+    const { id } = req.params;
 
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const student = await Student.findById({_id: id});
+        if (!student) {
+            return res.status(404).json({ data: 'Student Not Found', status: 404 });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: student
+        });
+    } catch (error) {
+        console.error('Error Fetching Student:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+}
+// get all students
+export const adminGetAllStudents = async (req: Request, res: Response) => {
+    try {
+        const user = await getUser(req);
+        if (!user) {
+            return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const { page = 1, limit = 10, q, center, course } = req.query;
+
+        const query: any = {};
+
+        // General search (name, email, etc.)
+        if (q) {
+            query.$or = [
+                { name: { $regex: q, $options: 'i' } },
+                { email: { $regex: q, $options: 'i' } }  // assuming email is a field
+                // Add other fields here if necessary
+            ];
+        }
+
+        // Center filter (only for admin users)
+        if (center && user.isAdmin) {
+            query.center = center;
+        } else if (!user.isAdmin) {
+            // If not admin, filter by user's center
+            query.center = user.user.center;
+        }else{
+            return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        // Course filter
+        if (course) {
+            query['plan.course_id'] = course;
+        }
+
+        const totalDocuments = await Student.countDocuments(query);
+        const totalPages = Math.ceil(totalDocuments / Number(limit));
+
+        const students = await Student.find(query)
+            .populate({
+                path: 'plan',
+                model: Paymentplan,
+                select: 'course_id',  // Selecting the course_ID field from Paymentplan
+                match: course ? { course_id: course } : {}
+            })
+            .limit(Number(limit))
+            .skip((Number(page) - 1) * Number(limit));
+
+        const paginatedResponse: Paginated = {
+            saved: [],
+            existingRecords: students,
+            hasPreviousPage: Number(page) > 1,
+            previousPages: Number(page) - 1,
+            hasNextPage: Number(page) < totalPages,
+            nextPages: Number(page) + 1,
+            totalPages: totalPages,
+            totalDocuments: totalDocuments,
+            currentPage: Number(page)
+        };
+
+        return res.status(200).json({
+            status: 200,
+            data: paginatedResponse
+        });
+    } catch (error) {
+        console.error('Error Fetching Students:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+}
