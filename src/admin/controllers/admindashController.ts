@@ -208,10 +208,10 @@ export const deleteCenter = async (req: Request, res: Response) => {
 // create manager endpoints
 export const createManager = async (req: Request, res:Response)=>{
     
-    const {fullname, email, phone, centerId} = req.body;
+    const {fullname, email, phone, center} = req.body;
 
     // Validate input
-    if (!fullname || !email || !phone || !centerId) {
+    if (!fullname || !email || !phone || !center) {
         return res.status(400).json({ status: 400, data: 'All fields are required' });
     }
 
@@ -222,7 +222,8 @@ export const createManager = async (req: Request, res:Response)=>{
         }
 
         // check if the center exists
-        const center = await Center.findById(centerId);
+        const center = await Center.findById('center');
+        
         if(!center){
             return res.status(404).json({
                 status: 404,
@@ -243,7 +244,7 @@ export const createManager = async (req: Request, res:Response)=>{
             email,
             password: hashedPassword,
             phone,
-            centerId: centerId
+            center: center
         });
 
         // Save the manager to the database
@@ -329,7 +330,7 @@ export const getManagerById = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
         // Find the manager by ID
-        const manager = await Manager.findById(id).populate('center'); // Populate center reference if needed
+        const manager = await Manager.findById(id).populate('center');
 
         if (!manager) {
             return res.status(404).json({ data: 'Manager not found', status: 404, });
