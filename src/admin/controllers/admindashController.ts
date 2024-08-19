@@ -207,7 +207,7 @@ export const deleteCenter = async (req: Request, res: Response) => {
 
 // create manager endpoints
 export const createManager = async (req: Request, res:Response)=>{
-    
+    const { id } = req.params;
     const {fullname, email, phone, center} = req.body;
 
     // Validate input
@@ -222,7 +222,7 @@ export const createManager = async (req: Request, res:Response)=>{
         }
 
         // check if the center exists
-        const center = await Center.findById('center');
+        const center = await Center.findById(id);
         
         if(!center){
             return res.status(404).json({
@@ -271,7 +271,7 @@ export const getAllManagers = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
         // Fetch all managers from the database
-        const managers = await Manager.find().populate('centerId');
+        const managers = await Manager.find().populate('center');
 
         return res.status(200).json({
             status: 200,
@@ -354,11 +354,11 @@ export const getManagerById = async (req: Request, res: Response) => {
 
 export const editManager = async (req: Request, res: Response) =>{
     const { id }  = req.params;
-    const {fullname, email, phone, centerId} = req.body;
+    const {fullname, email, phone, center} = req.body;
 
 
     // Validate input
-    if (!fullname || !email || !phone || !centerId) {
+    if (!fullname || !email || !phone || !center) {
         return res.status(400).json({
             status: 400,
             data: 'All fields are required'
@@ -374,7 +374,7 @@ export const editManager = async (req: Request, res: Response) =>{
         // find the center by id
         const editedManager = await Manager.findByIdAndUpdate(
             id,
-            {fullname, email, phone, centerId},
+            {fullname, email, phone, center},
             { new: true, runValidators: true }
         );
 
