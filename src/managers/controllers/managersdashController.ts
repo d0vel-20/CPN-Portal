@@ -259,7 +259,7 @@ export const getAllStaff = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const staff = await Staff.find({ center: user.user.center});
+        const staff = await Staff.find({ center: user.user.center}).populate('courses').exec();
         return res.status(200).json({
             status: 200,
             data: staff

@@ -1,5 +1,5 @@
 git add .
 
-git commit -m "modified admin get courses, allowed acces for managers"
+git commit -m "populated courses for staff"
 
 git push origin main
