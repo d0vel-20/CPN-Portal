@@ -129,7 +129,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
             .populate({
                 path: 'plan',
                 model: Paymentplan,
-                select: 'course_id',  // Selecting the course_ID field from Paymentplan
+                // select: 'course_id',  // Selecting the course_ID field from Paymentplan
                 match: course ? { course_id: course } : {}
             })
             .limit(Number(limit))

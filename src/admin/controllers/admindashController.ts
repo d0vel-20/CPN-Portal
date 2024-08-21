@@ -710,3 +710,28 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 }
+
+// Delete Student
+export const deleteStudent = async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    try {
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const student = await Student.findOneAndDelete({ _id: id});
+        if (!student) {
+            return res.status(404).json({ data: 'Student Not Found', status: 404 });
+        }
+
+        return res.status(200).json({
+            status: 200,
+            data: { message: 'Student Deleted Successfully' }
+        });
+    } catch (error) {
+        console.error('Error Deleting Student:', error);
+        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+    }
+};
