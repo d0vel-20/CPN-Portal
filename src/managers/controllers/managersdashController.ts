@@ -6,6 +6,7 @@ import Course from "../../models/courseModel";
 import Paymentplan from '../../models/paymentplanModel';
 import { Paginated } from '../../types/pagination.types';
 import Staff from '../../models/staffModel';
+import { calculateNextPaymentDate } from '../../utils/calculateNextPaymentDate';
 
 
 
@@ -374,6 +375,9 @@ export const addCourse = async (req: Request, res: Response) =>{
 
         const courseDuration = Number(course.duration);
         const estimate = +amount/+installments;
+        const next_payment_date = calculateNextPaymentDate(
+            courseDuration, +installments
+        );
 
 
         const paymentPlan = new Paymentplan({
@@ -383,6 +387,7 @@ export const addCourse = async (req: Request, res: Response) =>{
             installments,
             estimate,
             reg_date,
+            next_payment_date
           });
 
           await paymentPlan.save();

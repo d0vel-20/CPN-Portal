@@ -42,7 +42,8 @@ const PaymentplanSchema: Schema = new Schema({
   },
   last_payment_date: {
     type: String,
-    required: true,
+    // required: true,
+    default: ''
   },
   next_payment_date: {
     type: String,
