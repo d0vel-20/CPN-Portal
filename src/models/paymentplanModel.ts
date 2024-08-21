@@ -11,6 +11,7 @@ export interface IPaymentplan extends Document {
   estimate: number;
   last_payment_date: string;
   next_payment_date: string;
+  reg_date: string;
 
 }
 
@@ -47,6 +48,10 @@ const PaymentplanSchema: Schema = new Schema({
     type: String,
     required: true,
   },
+  reg_date:{
+    type:String,
+    required: true,
+  }
   
 },
 {timestamps: true}

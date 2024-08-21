@@ -483,7 +483,7 @@ export const getAllCourses = async (req: Request, res: Response) => {
     try {
 
         const user = await getUser(req);
-        if (!user || !user.isAdmin) {
+        if (!user) {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 

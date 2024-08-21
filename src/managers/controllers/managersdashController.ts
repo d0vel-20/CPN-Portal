@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { getUser } from '../../utils/getUser';
 import Student from "../../models/studentModel";
+import Course from "../../models/courseModel";
 import Paymentplan from '../../models/paymentplanModel';
 import { Paginated } from '../../types/pagination.types';
 import Staff from '../../models/staffModel';
@@ -349,3 +350,47 @@ export const deleteStaff = async (req: Request, res: Response) => {
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };
+
+// add course to student
+export const addCourse = async (req: Request, res: Response) =>{
+    const {id} = req.params;
+    const { amount, course_id, installments, reg_date} = req.body;
+
+    try {
+        const user = await getUser(req);
+        if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
+
+        const student = await Student.findById(id);
+        if (!student) {
+          return res.status(404).json({ data: 'Student not found', status: 404 });
+        }
+
+        const course = await Course.findById(course_id);
+        if (!course) {
+          return res.status(404).json({ data: 'Course not found', status: 404 });
+        }
+
+        const courseDuration = Number(course.duration);
+        const estimate = +amount/+installments;
+
+
+        const paymentPlan = new Paymentplan({
+            user_id: id,
+            amount,
+            course_id: course._id,
+            installments,
+            estimate,
+            reg_date,
+          });
+
+          await paymentPlan.save();
+        
+          return res.status(201).json({ data: 'Payment plan created successfully', paymentPlan, status: 201 });
+
+    } catch (error) {
+        console.error('Error adding payment plan:', error);
+        return res.status(500).json({ data: 'Internal Server Error', error: (error as any).message, status: 500 });
+      }
+    }
