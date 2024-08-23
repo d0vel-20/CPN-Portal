@@ -101,9 +101,8 @@ export const getAllStudents = async (req: Request, res: Response) => {
         // General search (name, email, etc.)
         if (q) {
             query.$or = [
-                { name: { $regex: q, $options: 'i' } },
+                { fullname: { $regex: q, $options: 'i' } },
                 { email: { $regex: q, $options: 'i' } }  // assuming email is a field
-                // Add other fields here if necessary
             ];
         }
 
@@ -113,7 +112,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
         } else if (!user.isAdmin) {
             // If not admin, filter by user's center
             query.center = user.user.center;
-        }else{
+        } else {
             return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
@@ -129,13 +128,15 @@ export const getAllStudents = async (req: Request, res: Response) => {
             .populate({
                 path: 'plan',
                 model: Paymentplan,
-                select: 'course_id',
-                match: course ? { course_id: course } : {}
+                populate: {
+                    path: '_id', // Adjust based on your needs
+                    select: 'amount course_id installments estimate last_payment_date next_payment_date reg_date'
+                }
             })
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit));
 
-        const paginatedResponse: Paginated = {
+        const paginatedResponse = {
             saved: [],
             existingRecords: students,
             hasPreviousPage: Number(page) > 1,
@@ -155,8 +156,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
         console.error('Error Fetching Students:', error);
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
-};
-
+}
 
 
 // Get Student by ID
