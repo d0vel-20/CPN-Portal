@@ -593,7 +593,9 @@ export const adminGetOneStaff = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const staff = await Staff.findOne({ _id: id});
+        const staff = await Staff.findOne({ _id: id})
+        .populate('courses')
+        .populate('center');
         if (!staff) {
             return res.status(404).json({ data: 'Staff Not Found', status: 404 });
         }
@@ -632,6 +634,8 @@ export const adminGetAllStaff = async (req: Request, res: Response) => {
         const totalPages = Math.ceil(totalDocuments / Number(limit)); // Calculate total pages based on limit
 
         const staff = await Staff.find(query)
+            .populate('courses')
+            .populate('center')
             .limit(Number(limit)) // Limit results per page
             .skip((Number(page) - 1) * Number(limit)) // Skip results for pagination
             .exec(); // Execute the query
@@ -712,6 +716,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         const totalPages = Math.ceil(totalDocuments / Number(limit));
 
         const students = await Student.find(query)
+            .populate('center')
             .populate({
                 path: 'plan',
                 model: Paymentplan,
