@@ -306,7 +306,7 @@ export const getAllStaff = async (req: Request, res: Response) => {
 
     // Add search by name if 'q' is provided
     if (q) {
-      query.name = { $regex: q, $options: "i" }; // Case-insensitive search by name
+      query.$or = {fullname: {$regex:q, $options: "i"}}; // Case-insensitive search by name
     }
 
     const staff = await Staff.find(query) // Use the query with optional search criteria
