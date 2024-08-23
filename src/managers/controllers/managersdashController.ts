@@ -361,8 +361,9 @@ export const deleteStaff = async (req: Request, res: Response) => {
 
 // add course to student
 export const addCourse = async (req: Request, res: Response) =>{
+    const { _id } = req.params;
 
-    const {_id, amount, course_id, installments, reg_date} = req.body;
+    const { amount, course_id, installments, reg_date} = req.body;
 
     try {
         const user = await getUser(req);

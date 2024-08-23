@@ -31,6 +31,7 @@ router.patch("/staff/:id", verifyToken, editStaff);
 router.delete("/staff/:id", verifyToken, deleteStaff);
 
 // Manager add course to students
-router.post("/students/plan", verifyToken, addCourse);
+router.post("/students/:id/plan", verifyToken, addCourse);
+
 
 export default router;
