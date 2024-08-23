@@ -612,19 +612,51 @@ export const adminGetAllStaff = async (req: Request, res: Response) => {
     try {
         const user = await getUser(req);
         if (!user || !user.isAdmin) {
-          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+            return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const staff = await Staff.find();
+        const { page = 1, limit = 10, q } = req.query; // Destructure query parameters with default values
+
+        const query: any = {}; // Initialize the query object
+
+        // Add search functionality by name, email, etc.
+        if (q) {
+            query.$or = [
+                { name: { $regex: q, $options: 'i' } },
+                { email: { $regex: q, $options: 'i' } }
+                // Add other fields here if necessary for more search options
+            ];
+        }
+
+        const totalDocuments = await Staff.countDocuments(query); // Get the total number of documents matching the query
+        const totalPages = Math.ceil(totalDocuments / Number(limit)); // Calculate total pages based on limit
+
+        const staff = await Staff.find(query)
+            .limit(Number(limit)) // Limit results per page
+            .skip((Number(page) - 1) * Number(limit)) // Skip results for pagination
+            .exec(); // Execute the query
+
+        const paginatedResponse: Paginated = {
+            saved: [],
+            existingRecords: staff, // Return staff data
+            hasPreviousPage: Number(page) > 1,
+            previousPages: Number(page) - 1,
+            hasNextPage: Number(page) < totalPages,
+            nextPages: Number(page) + 1,
+            totalPages: totalPages,
+            totalDocuments: totalDocuments,
+            currentPage: Number(page)
+        };
+
         return res.status(200).json({
             status: 200,
-            data: staff
+            data: paginatedResponse
         });
     } catch (error) {
-        console.error('Error Fetching Students:', error);
+        console.error('Error Fetching Staff:', error);
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
-}
+};
 // get individual student
 export const adminGetOneStudent = async (req: Request, res: Response) => {
     const { id } = req.params;
