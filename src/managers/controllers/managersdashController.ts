@@ -133,7 +133,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
                     path: '_id', // Adjust based on your needs
                     select: 'amount installments estimate last_payment_date next_payment_date reg_date',
                     populate: {
-                        path: 'course_id',
+                        path: 'plan.course_id',
                         model: Course,
                         select: 'title duration amount'
                     }
