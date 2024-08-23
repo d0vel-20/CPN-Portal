@@ -300,15 +300,25 @@ export const getAllStaff = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    const staff = await Staff.find({ center: user.user.center })
+    const { q } = req.query; // Retrieve the search query parameter
+
+    const query: any = { center: user.user.center }; // Base query to filter by center
+
+    // Add search by name if 'q' is provided
+    if (q) {
+      query.name = { $regex: q, $options: "i" }; // Case-insensitive search by name
+    }
+
+    const staff = await Staff.find(query) // Use the query with optional search criteria
       .populate("courses")
       .exec();
+
     return res.status(200).json({
       status: 200,
       data: staff,
     });
   } catch (error) {
-    console.error("Error Fetching Students:", error);
+    console.error("Error Fetching Staff:", error);
     return res.status(500).json({ data: "Internal Server Error", status: 500 });
   }
 };
