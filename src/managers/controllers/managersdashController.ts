@@ -187,10 +187,10 @@ export const getStudentById = async (req: Request, res: Response) => {
       _id: id,
       center: user.user.center,
     }).populate({
-      path: "plan",
-      model: Paymentplan,
-      populate: {
-        path: "_id", // Adjust based on your needs
+        path: "plan",
+        model: Paymentplan,
+        // populate: {
+        // path: '_id', // Adjust based on your needs
         select:
           "amount installments estimate last_payment_date next_payment_date reg_date",
         populate: {
@@ -198,8 +198,8 @@ export const getStudentById = async (req: Request, res: Response) => {
           model: Course,
           select: "title duration amount",
         },
-      },
-    });
+        // }
+      })
     if (!student) {
       return res.status(404).json({ data: "Student Not Found", status: 404 });
     }
