@@ -8,6 +8,7 @@ import { Paginated } from '../../types/pagination.types';
 import Staff from '../../models/staffModel';
 import { calculateNextPaymentDate } from '../../utils/calculateNextPaymentDate';
 import mongoose from 'mongoose';
+import { populate } from 'dotenv';
 
 
 
@@ -130,7 +131,12 @@ export const getAllStudents = async (req: Request, res: Response) => {
                 model: Paymentplan,
                 populate: {
                     path: '_id', // Adjust based on your needs
-                    select: 'amount course_id installments estimate last_payment_date next_payment_date reg_date'
+                    select: 'amount installments estimate last_payment_date next_payment_date reg_date',
+                    populate: {
+                        path: 'course_id',
+                        model: Course,
+                        select: 'title duration amount'
+                    }
                 }
             })
             .limit(Number(limit))
