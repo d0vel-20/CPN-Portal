@@ -361,7 +361,7 @@ export const deleteStaff = async (req: Request, res: Response) => {
 
 // add course to student
 export const addCourse = async (req: Request, res: Response) =>{
-    const { _id } = req.params;
+    const { id } = req.params;
 
     const { amount, course_id, installments, reg_date} = req.body;
 
@@ -371,7 +371,7 @@ export const addCourse = async (req: Request, res: Response) =>{
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
   
-      const student = await Student.findById(_id);
+      const student = await Student.findById(id);
       if (!student) {
         return res.status(404).json({ data: 'Student not found', status: 404 });
       }
