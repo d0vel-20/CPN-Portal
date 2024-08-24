@@ -633,7 +633,7 @@ export const adminGetAllStaff = async (req: Request, res: Response) => {
         if (center && user.isAdmin) {
             query.center = center;
             } else {
-            return res.status(401).json({ data: "Unauthorized", status: 401 });
+            return res.status(401).json({ data: "authorized", status: 401 });
             }
 
         const totalDocuments = await Staff.countDocuments(query); // Get the total number of documents matching the query
