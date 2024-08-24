@@ -617,7 +617,7 @@ export const adminGetAllStaff = async (req: Request, res: Response) => {
             return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const { page = 1, limit = 10, q } = req.query; // Destructure query parameters with default values
+        const { page = 1, limit = 10, q, center } = req.query; // Destructure query parameters with default values
 
         const query: any = {}; // Initialize the query object
 
@@ -629,6 +629,12 @@ export const adminGetAllStaff = async (req: Request, res: Response) => {
                 // Add other fields here if necessary for more search options
             ];
         }
+
+        if (center && user.isAdmin) {
+            query.center = center;
+            } else {
+            return res.status(401).json({ data: "Unauthorized", status: 401 });
+            }
 
         const totalDocuments = await Staff.countDocuments(query); // Get the total number of documents matching the query
         const totalPages = Math.ceil(totalDocuments / Number(limit)); // Calculate total pages based on limit
@@ -708,7 +714,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
             return res.status(401).json({ data: 'Unauthorized', status: 401 });
         }
 
-        const { page = 1, limit = 10, q, course } = req.query;
+        const { page = 1, limit = 10, q, center, course } = req.query;
 
         const query: any = {};
 
@@ -720,6 +726,13 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
                 // Add other fields here if necessary
             ];
         }
+
+            // Center filter (only for admin users)
+        if (center && user.isAdmin) {
+            query.center = center;
+            } else {
+            return res.status(401).json({ data: "Unauthorized", status: 401 });
+            }
 
 
         // Course filter
