@@ -727,12 +727,9 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         }
 
             // Center filter (only for admin users)
-        if (center && user.isAdmin) {
-            query.center = center;
-            } else {
-            return res.status(401).json({ data: "Unauthorized", status: 401 });
+            if (center) {
+                query.center = center;
             }
-
 
         // Course filter
         if (course) {
