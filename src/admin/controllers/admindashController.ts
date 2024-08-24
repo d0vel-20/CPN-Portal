@@ -630,13 +630,10 @@ export const adminGetAllStaff = async (req: Request, res: Response) => {
             ];
         }
 
-    // Center filter (only for admin users)
-    if (center && !user.isAdmin) {
-        query.center = center;
-
-      } else {
-        return res.status(401).json({ data: "Unauthorized", status: 401 });
-      }
+        // Add center filter if provided
+        if (center) {
+            query.center = center;
+        }
 
         const totalDocuments = await Staff.countDocuments(query); // Get the total number of documents matching the query
         const totalPages = Math.ceil(totalDocuments / Number(limit)); // Calculate total pages based on limit
