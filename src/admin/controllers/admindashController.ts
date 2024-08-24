@@ -630,11 +630,15 @@ export const adminGetAllStaff = async (req: Request, res: Response) => {
             ];
         }
 
-        if (center && user.isAdmin) {
-            query.center = center;
-            } else {
-            return res.status(401).json({ data: "authorized", status: 401 });
-            }
+    // Center filter (only for admin users)
+    if (center && user.isAdmin) {
+        query.center = center;
+      } else if (!user.isAdmin) {
+        // If not admin, filter by user's center
+        query.center = user.user.center;
+      } else {
+        return res.status(401).json({ data: "Unauthorized", status: 401 });
+      }
 
         const totalDocuments = await Staff.countDocuments(query); // Get the total number of documents matching the query
         const totalPages = Math.ceil(totalDocuments / Number(limit)); // Calculate total pages based on limit
