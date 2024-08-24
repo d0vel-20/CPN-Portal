@@ -8,7 +8,7 @@ export interface IStudent extends Document {
     fullname: string;
     email: string;
     phone: number;
-    center: string;
+    center: mongoose.Schema.Types.ObjectId;
     reg_date: string;
     birth_date: string;
     student_id: string;
@@ -29,10 +29,11 @@ const StudentShema: Schema = new Schema({
         type: Number,
         required: true,
     },
-    center:{
-        type: String,
+    center: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Center', // Referencing the Center model
         required: true,
-    },
+        },
     reg_date:{
         type: String,
         required: true,
