@@ -631,11 +631,9 @@ export const adminGetAllStaff = async (req: Request, res: Response) => {
         }
 
     // Center filter (only for admin users)
-    if (center && user.isAdmin) {
+    if (center && !user.isAdmin) {
         query.center = center;
-      } else if (!user.isAdmin) {
-        // If not admin, filter by user's center
-        query.center = user.user.center;
+
       } else {
         return res.status(401).json({ data: "Unauthorized", status: 401 });
       }
