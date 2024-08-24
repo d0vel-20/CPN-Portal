@@ -718,11 +718,19 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         const students = await Student.find(query)
             .populate('center')
             .populate({
-                path: 'plan',
+                path: "plan",
                 model: Paymentplan,
-                select: 'course_id',  // Selecting the course_ID field from Paymentplan
-                match: course ? { course_id: course } : {}
-            })
+                // populate: {
+                // path: '_id', // Adjust based on your needs
+                select:
+                  "amount installments estimate last_payment_date next_payment_date reg_date",
+                populate: {
+                  path: "course_id",
+                  model: Course,
+                  select: "title duration amount",
+                },
+                // }
+              })
             .limit(Number(limit))
             .skip((Number(page) - 1) * Number(limit));
 
