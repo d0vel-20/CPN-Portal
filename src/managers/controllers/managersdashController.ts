@@ -8,6 +8,9 @@ import Staff from "../../models/staffModel";
 import { calculateNextPaymentDate } from "../../utils/calculateNextPaymentDate";
 import mongoose from "mongoose";
 import { populate } from "dotenv";
+import Invoice from "../../models/invoiceModel";
+import Payment from "../../models/paymentModel";
+import cron from 'node-cron';
 
 // create student
 export const createStudent = async (req: Request, res: Response) => {
@@ -470,3 +473,117 @@ export const addCourse = async (req: Request, res: Response) => {
       });
   }
 };
+
+
+
+// create invoice
+export const createInvoice = async (req: Request, res: Response) => {
+  try {
+
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+
+      const { user_id, amount, payment_plan_id, message, disclaimer } = req.body;
+
+      const newInvoice = new Invoice({
+          user_id,
+          amount,
+          payment_plan_id,
+          message,
+          disclaimer
+      });
+
+      await newInvoice.save();
+      res.status(201).json({
+        data:{
+          newInvoice,
+          message: "Invoice created successfully",
+          status: 201
+        }
+      });
+  } catch (error) {
+      res.status(500).json({"Error creating invoice": error});
+  }
+};
+
+
+// add payment
+export const addPayment = async (req: Request, res: Response) => {
+  try {
+
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+
+      const { user_id, amount, payment_plan_id, message, disclaimer, payment_date } = req.body;
+
+      const newPayment = new Payment({
+          user_id,
+          amount,
+          payment_plan_id,
+          message,
+          disclaimer,
+          payment_date
+      });
+
+      await newPayment.save();
+      res.status(201).json({
+        data:{
+          newPayment,
+          message: "Payment created successfully",
+          status: 201
+        }
+      });
+  } catch (error) {
+      res.status(500).json({ "Error creating payment": error });
+  }
+};
+
+// cron job
+// Utility function to calculate the number of days between two dates
+const calculateDaysDifference = (date1: Date, date2: Date) => {
+  const diffTime = Math.abs(date2.getTime() - date1.getTime());
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+};
+
+const generateInvoicesForUnpaidStudents = async () => {
+  try {
+    // Fetch all students with their payment plans
+    const students = await Student.find().populate('plan').exec();
+
+    const today = new Date();
+    const daysWithoutPayment = 30; 
+
+    students.forEach(student => {
+      student.plan.forEach(async (plan: any) => {
+        // Check if last payment date exceeds the threshold
+        const lastPaymentDate = new Date(plan.last_payment_date);
+        const daysSinceLastPayment = calculateDaysDifference(lastPaymentDate, today);
+
+        if (daysSinceLastPayment > daysWithoutPayment) {
+          // Calculate outstanding amount based on payment plan
+          const installmentAmount = plan.amount / plan.installments; 
+
+          const newInvoice = new Invoice({
+            user_id: student._id,
+            amount: installmentAmount,
+            payment_plan_id: plan._id,
+            message: `Invoice for unpaid duration exceeding ${daysWithoutPayment} days`,
+            disclaimer: 'This is an automated invoice due to delayed payment.',
+          });
+
+          await newInvoice.save();
+          console.log(`Generated invoice for student: ${student._id}`);
+        }
+      });
+    });
+  } catch (error) {
+    console.error('Error generating invoices:', error);
+  }
+};
+
+// Schedule the cron job to run every day at midnight
+cron.schedule('0 0 * * *', generateInvoicesForUnpaidStudents);

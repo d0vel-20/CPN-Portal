@@ -357,11 +357,11 @@ export const getManagerById = async (req: Request, res: Response) => {
 
 export const editManager = async (req: Request, res: Response) =>{
     const { id }  = req.params;
-    const {fullname, email, phone, centerId} = req.body;
+    const {fullname, email, phone, center} = req.body;
 
 
     // Validate input
-    if (!fullname || !email || !phone || !centerId) {
+    if (!fullname || !email || !phone || !center) {
         return res.status(400).json({
             status: 400,
             data: 'All fields are required'
@@ -377,7 +377,7 @@ export const editManager = async (req: Request, res: Response) =>{
         // find the center by id
         const editedManager = await Manager.findByIdAndUpdate(
             id,
-            {fullname, email, phone, centerId},
+            {fullname, email, phone, center},
             { new: true, runValidators: true }
         );
 
@@ -735,6 +735,8 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         if (course) {
             query['plan.course_id'] = course;
         }
+
+        console.log('Query:', query);
 
         const totalDocuments = await Student.countDocuments(query);
         const totalPages = Math.ceil(totalDocuments / Number(limit));
