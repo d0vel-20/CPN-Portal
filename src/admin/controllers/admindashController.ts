@@ -392,7 +392,7 @@ export const editManager = async (req: Request, res: Response) =>{
             status:200,
             data:{
                 editedManager,
-                message: 'Center Updated Successfully'
+                message: 'Manager Updated Successfully'
             }
         });
     } catch (error) {
