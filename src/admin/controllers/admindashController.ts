@@ -361,12 +361,12 @@ export const editManager = async (req: Request, res: Response) =>{
 
 
     // Validate input
-    // if (!fullname || !email || !phone || !center) {
-    //     return res.status(400).json({
-    //         status: 400,
-    //         data: 'All fields are required'
-    //     });
-    // }
+    if (!fullname && !email && !phone && !center) {
+        return res.status(400).json({
+            status: 400,
+            data: 'Atleast one fields are required'
+        });
+    }
 
     try {
         const user = await getUser(req);
