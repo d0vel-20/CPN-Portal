@@ -106,7 +106,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    const { page = 1, limit = 10, q, center, course } = req.query;
+    const { page = 1, limit = 20, q, center, course } = req.query;
 
     const query: any = {};
 
