@@ -4,7 +4,6 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 // Define the interface for the Admin document
 export interface IInvoice extends Document {
   _id: Types.ObjectId;
-  user_id: Types.ObjectId;
   amount: number;
   payment_plan_id: Types.ObjectId;
   message: string,
@@ -14,11 +13,6 @@ export interface IInvoice extends Document {
 
 
 const InvoiceSchema: Schema = new Schema({
-  user_id: {
-    type: String,
-    required: true,
-    ref: ''
-  },
   amount: {
     type: Number,
     required: true,
