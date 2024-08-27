@@ -478,6 +478,9 @@ export const addCourse = async (req: Request, res: Response) => {
 
 // create invoice
 export const createInvoice = async (req: Request, res: Response) => {
+
+  const { amount, payment_plan_id, message, disclaimer } = req.body;
+
   try {
 
     const user = await getUser(req);
@@ -485,10 +488,10 @@ export const createInvoice = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-      const { user_id, amount, payment_plan_id, message, disclaimer } = req.body;
+
+
 
       const newInvoice = new Invoice({
-          user_id,
           amount,
           payment_plan_id,
           message,
@@ -542,48 +545,4 @@ export const addPayment = async (req: Request, res: Response) => {
   }
 };
 
-// cron job
-// Utility function to calculate the number of days between two dates
-const calculateDaysDifference = (date1: Date, date2: Date) => {
-  const diffTime = Math.abs(date2.getTime() - date1.getTime());
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-};
 
-const generateInvoicesForUnpaidStudents = async () => {
-  try {
-    // Fetch all students with their payment plans
-    const students = await Student.find().populate('plan').exec();
-
-    const today = new Date();
-    const daysWithoutPayment = 30; 
-
-    students.forEach(student => {
-      student.plan.forEach(async (plan: any) => {
-        // Check if last payment date exceeds the threshold
-        const lastPaymentDate = new Date(plan.last_payment_date);
-        const daysSinceLastPayment = calculateDaysDifference(lastPaymentDate, today);
-
-        if (daysSinceLastPayment > daysWithoutPayment) {
-          // Calculate outstanding amount based on payment plan
-          const installmentAmount = plan.amount / plan.installments; 
-
-          const newInvoice = new Invoice({
-            user_id: student._id,
-            amount: installmentAmount,
-            payment_plan_id: plan._id,
-            message: `Invoice for unpaid duration exceeding ${daysWithoutPayment} days`,
-            disclaimer: 'This is an automated invoice due to delayed payment.',
-          });
-
-          await newInvoice.save();
-          console.log(`Generated invoice for student: ${student._id}`);
-        }
-      });
-    });
-  } catch (error) {
-    console.error('Error generating invoices:', error);
-  }
-};
-
-// Schedule the cron job to run every day at midnight
-cron.schedule('0 0 * * *', generateInvoicesForUnpaidStudents);
