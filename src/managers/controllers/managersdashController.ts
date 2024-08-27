@@ -423,7 +423,7 @@ export const addCourse = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    const student = await Student.findById(id);
+    const student = await Student.findById({_id: id, center: user.user.center});
     if (!student) {
       return res.status(404).json({ data: "Student not found", status: 404 });
     }
@@ -515,6 +515,9 @@ export const createInvoice = async (req: Request, res: Response) => {
 
 // add payment
 export const addPayment = async (req: Request, res: Response) => {
+  const {id} = req.params
+  const { amount, payment_plan_id, message, disclaimer, payment_date } = req.body;
+
   try {
 
     const user = await getUser(req);
@@ -522,10 +525,15 @@ export const addPayment = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-      const { user_id, amount, payment_plan_id, message, disclaimer, payment_date } = req.body;
+    const student = await Student.findById({_id: id, center: user.user.center});
+    if (!student) {
+      return res.status(404).json({ data: "Student not found", status: 404 });
+    }
+
+
 
       const newPayment = new Payment({
-          user_id,
+          user_id: student._id,
           amount,
           payment_plan_id,
           message,
