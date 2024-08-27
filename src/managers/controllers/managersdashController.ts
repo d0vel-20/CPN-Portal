@@ -479,7 +479,7 @@ export const addCourse = async (req: Request, res: Response) => {
 // create invoice
 export const createInvoice = async (req: Request, res: Response) => {
 
-  const { amount, payment_plan_id, message, disclaimer } = req.body;
+  const { amount, payment_plan_id, message, disclaimer, due_date } = req.body;
 
   try {
 
@@ -495,7 +495,8 @@ export const createInvoice = async (req: Request, res: Response) => {
           amount,
           payment_plan_id,
           message,
-          disclaimer
+          disclaimer,
+          due_date
       });
 
       await newInvoice.save();

@@ -11,7 +11,8 @@ import {
   editStaff,
   deleteStaff,
   addCourse,
-  createInvoice
+  createInvoice,
+  addPayment
 } from "../../managers/controllers/managersdashController";
 import verifyToken from "../../middlewares/authMiddleware";
 
@@ -37,5 +38,7 @@ router.post("/students/:id/plan", verifyToken, addCourse);
 // manger create invoice
 router.post("/plan/invoice", verifyToken, createInvoice);
 
+// manager add payment
+router.post("student/payment", verifyToken, addPayment)
 
 export default router;

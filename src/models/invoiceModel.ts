@@ -8,6 +8,7 @@ export interface IInvoice extends Document {
   payment_plan_id: Types.ObjectId;
   message: string,
   disclaimer: string,
+  due_date:string,
 
 }
 
@@ -27,6 +28,10 @@ const InvoiceSchema: Schema = new Schema({
     default: '',
   },
   disclaimer: {
+    type: String,
+    default: '',
+  },
+  due_date: {
     type: String,
     default: '',
   },
