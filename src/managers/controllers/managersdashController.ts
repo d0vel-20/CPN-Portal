@@ -658,6 +658,12 @@ export const getAllPayments = async (req: Request, res: Response) => {
     const payments = await Payment.find().populate({
       path: "plan",
       model: Paymentplan,
+      select:
+      "amount installments estimate last_payment_date next_payment_date reg_date",
+    populate: {
+      path: "course_id",
+      model: Course,
+      select: "title duration amount",},
     });
 
     res.status(200).json({
@@ -686,6 +692,12 @@ export const getPaymentById = async (req: Request, res: Response) => {
     const payment = await Payment.findById(id).populate({
       path: "plan",
       model: Paymentplan,
+      select:
+      "amount installments estimate last_payment_date next_payment_date reg_date",
+    populate: {
+      path: "course_id",
+      model: Course,
+      select: "title duration amount",},
     });
 
     if (!payment) {
