@@ -513,6 +513,97 @@ export const createInvoice = async (req: Request, res: Response) => {
 };
 
 
+// get all invoices
+export const getAllInvoices = async (req: Request, res: Response) => {
+  try {
+
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+
+    const invoices = await Invoice.find();
+
+    res.status(200).json({
+      data: invoices,
+      status: 200,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Error fetching invoices",
+      details: error,
+    });
+  }
+};
+
+
+// get single invoice
+export const getInvoiceById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+
+    const invoice = await Invoice.findById(id);
+
+    if (!invoice) {
+      return res.status(404).json({
+        data: "Invoice not found",
+        status: 404,
+      });
+    }
+
+    res.status(200).json({
+      data: invoice,
+      status: 200,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Error fetching the invoice",
+      details: error,
+    });
+  }
+};
+
+// delete invoice
+export const deleteInvoice = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+    
+    const invoice = await Invoice.findByIdAndDelete(id);
+
+    if (!invoice) {
+      return res.status(404).json({
+        data: "Invoice not found",
+        status: 404,
+      });
+    }
+
+    res.status(200).json({
+      data: "Invoice deleted successfully",
+      status: 200,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Error deleting the invoice",
+      details: error,
+    });
+  }
+};
+
+
+
+
 // add payment
 export const addPayment = async (req: Request, res: Response) => {
   const {id} = req.params

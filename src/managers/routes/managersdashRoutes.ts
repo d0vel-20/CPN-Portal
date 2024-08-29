@@ -12,7 +12,10 @@ import {
   deleteStaff,
   addCourse,
   createInvoice,
-  addPayment
+  addPayment,
+  getAllInvoices,
+  getInvoiceById,
+  deleteInvoice,
 } from "../../managers/controllers/managersdashController";
 import verifyToken from "../../middlewares/authMiddleware";
 
@@ -37,6 +40,9 @@ router.post("/students/:id/plan", verifyToken, addCourse);
 
 // manger create invoice
 router.post("/plan/invoice", verifyToken, createInvoice);
+router.get("plan/invoice", verifyToken, getAllInvoices);
+router.get("/plan/invoice/:id", verifyToken, getInvoiceById);
+router.delete("/plan/invoice/:id", verifyToken, deleteInvoice);
 
 // manager add payment
 router.post("student/payment", verifyToken, addPayment)
