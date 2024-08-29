@@ -4,7 +4,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 // Define the interface for the Admin document
 export interface IPayment extends Document {
   _id: Types.ObjectId;
-  user_id: Types.ObjectId;
+  user_id: string;
   amount: number;
   payment_plan_id: Types.ObjectId;
   message: string,
@@ -18,7 +18,6 @@ const PaymentSchema: Schema = new Schema({
   user_id: {
     type: String,
     required: true,
-    ref: ''
   },
   amount: {
     type: Number,
