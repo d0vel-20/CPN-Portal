@@ -40,7 +40,7 @@ router.post("/students/:id/plan", verifyToken, addCourse);
 
 // manger create invoice
 router.post("/plan/invoice", verifyToken, createInvoice);
-router.get("plan/invoice", verifyToken, getAllInvoices);
+router.get("/plan/invoice", verifyToken, getAllInvoices);
 router.get("/plan/invoice/:id", verifyToken, getInvoiceById);
 router.delete("/plan/invoice/:id", verifyToken, deleteInvoice);
 
