@@ -16,6 +16,8 @@ import {
   getAllInvoices,
   getInvoiceById,
   deleteInvoice,
+  getAllPayments,
+  getPaymentById
 } from "../../managers/controllers/managersdashController";
 import verifyToken from "../../middlewares/authMiddleware";
 
@@ -45,6 +47,8 @@ router.get("/plan/invoice/:id", verifyToken, getInvoiceById);
 router.delete("/plan/invoice/:id", verifyToken, deleteInvoice);
 
 // manager add payment
-router.post("/students/:id/payment", verifyToken, addPayment)
+router.post("/students/:id/payment", verifyToken, addPayment);
+router.get("/students/payment", verifyToken, getAllPayments);
+router.get("/students/payment/:id", verifyToken, getPaymentById);
 
 export default router;

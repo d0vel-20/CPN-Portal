@@ -579,7 +579,7 @@ export const deleteInvoice = async (req: Request, res: Response) => {
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
-    
+
     const invoice = await Invoice.findByIdAndDelete(id);
 
     if (!invoice) {
@@ -644,5 +644,68 @@ export const addPayment = async (req: Request, res: Response) => {
       res.status(500).json({ "Error creating payment": error });
   }
 };
+
+
+// get all payments
+export const getAllPayments = async (req: Request, res: Response) => {
+  try {
+
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+
+    const payments = await Payment.find().populate({
+      path: "plan",
+      model: Paymentplan,
+    });
+
+    res.status(200).json({
+      data: payments,
+      status: 200,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Error fetching payments",
+      details: error,
+    });
+  }
+};
+
+// get single paymentplan
+export const getPaymentById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  try {
+
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+
+    const payment = await Payment.findById(id).populate({
+      path: "plan",
+      model: Paymentplan,
+    });
+
+    if (!payment) {
+      return res.status(404).json({
+        data: "Payment not found",
+        status: 404,
+      });
+    }
+
+    res.status(200).json({
+      data: payment,
+      status: 200,
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: "Error fetching the payment",
+      details: error,
+    });
+  }
+};
+
 
 
