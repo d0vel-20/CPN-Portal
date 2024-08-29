@@ -1,5 +1,5 @@
 import express from 'express';
-import { createCenter, editCenter, deleteCenter, getAllCenters, getCenterById, createManager, getAllManagers, deleteManager, getManagerById, editManager,  createCourse, editCourse, getAllCourses, getCourseById, deleteCourse, adminGetAllStaff, adminGetOneStaff, adminGetAllStudents, adminGetOneStudent, deleteStudent, getAllInvoices, getInvoiceById } from '../controllers/admindashController';
+import { createCenter, editCenter, deleteCenter, getAllCenters, getCenterById, createManager, getAllManagers, deleteManager, getManagerById, editManager,  createCourse, editCourse, getAllCourses, getCourseById, deleteCourse, adminGetAllStaff, adminGetOneStaff, adminGetAllStudents, adminGetOneStudent, deleteStudent, getAllInvoices } from '../controllers/admindashController';
 import verifyToken  from '../../middlewares/authMiddleware';
 const router = express.Router();
 
@@ -40,8 +40,7 @@ router.delete("/students/:id", verifyToken, deleteStudent);
 
 
 // Get invoices
-router.get("plan/invoice", verifyToken, getAllInvoices)
-router.get("plan/invoice/:id", verifyToken, getInvoiceById);
+router.get("/plan/invoice", verifyToken, getAllInvoices);
 
 
 

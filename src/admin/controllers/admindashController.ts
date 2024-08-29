@@ -833,35 +833,3 @@ export const getAllInvoices = async (req: Request, res: Response) => {
       });
     }
   };
-
-  // get single invoice
-export const getInvoiceById = async (req: Request, res: Response) => {
-    const { id } = req.params;
-  
-    try {
-  
-        // const user = await getUser(req);
-        // if (!user || !user.isAdmin) {
-        //     return res.status(401).json({ data: 'Unauthorized', status: 401 });
-        // }
-  
-      const invoice = await Invoice.findById(id);
-  
-      if (!invoice) {
-        return res.status(404).json({
-          data: "Invoice not found",
-          status: 404,
-        });
-      }
-  
-      res.status(200).json({
-        data: invoice,
-        status: 200,
-      });
-    } catch (error) {
-      res.status(500).json({
-        error: "Error fetching the invoice",
-        details: error,
-      });
-    }
-  };
