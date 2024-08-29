@@ -10,6 +10,7 @@ import dotenv from 'dotenv';
 import Staff from '../../models/staffModel';
 import Paymentplan from '../../models/paymentplanModel';
 import { Paginated } from '../../types/pagination.types';
+import Invoice from "../../models/invoiceModel";
 
 
 dotenv.config();
@@ -806,3 +807,61 @@ export const deleteStudent = async (req: Request, res: Response) => {
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 };
+
+
+// ==================================================  END GAME ==================================================
+
+// get all invoices
+export const getAllInvoices = async (req: Request, res: Response) => {
+    try {
+  
+      const user = await getUser(req);
+      if (!user || !user.isAdmin) {
+        return res.status(401).json({ data: "Unauthorized", status: 401 });
+      }
+  
+      const invoices = await Invoice.find();
+  
+      res.status(200).json({
+        data: invoices,
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error fetching invoices",
+        details: error,
+      });
+    }
+  };
+
+  // get single invoice
+export const getInvoiceById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+  
+    try {
+  
+      const user = await getUser(req);
+      if (!user || !user.isAdmin) {
+        return res.status(401).json({ data: "Unauthorized", status: 401 });
+      }
+  
+      const invoice = await Invoice.findById(id);
+  
+      if (!invoice) {
+        return res.status(404).json({
+          data: "Invoice not found",
+          status: 404,
+        });
+      }
+  
+      res.status(200).json({
+        data: invoice,
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error fetching the invoice",
+        details: error,
+      });
+    }
+  };
