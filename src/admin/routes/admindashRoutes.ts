@@ -40,7 +40,7 @@ router.delete("/students/:id", verifyToken, deleteStudent);
 
 
 // Get invoices
-router.get("plan/invoice", verifyToken, getAllInvoices);
+router.get("plan/invoice", verifyToken, getAllInvoices)
 router.get("plan/invoice/:id", verifyToken, getInvoiceById);
 
 

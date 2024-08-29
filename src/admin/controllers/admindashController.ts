@@ -815,10 +815,10 @@ export const deleteStudent = async (req: Request, res: Response) => {
 export const getAllInvoices = async (req: Request, res: Response) => {
     try {
   
-      const user = await getUser(req);
-      if (!user || !user.isAdmin) {
-        return res.status(401).json({ data: "Unauthorized", status: 401 });
-      }
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+            return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
   
       const invoices = await Invoice.find();
   
@@ -840,10 +840,10 @@ export const getInvoiceById = async (req: Request, res: Response) => {
   
     try {
   
-      const user = await getUser(req);
-      if (!user || !user.isAdmin) {
-        return res.status(401).json({ data: "Unauthorized", status: 401 });
-      }
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+            return res.status(401).json({ data: 'Unauthorized', status: 401 });
+        }
   
       const invoice = await Invoice.findById(id);
   
