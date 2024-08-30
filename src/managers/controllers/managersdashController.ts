@@ -501,10 +501,11 @@ export const createInvoice = async (req: Request, res: Response) => {
 
       await newInvoice.save();
       res.status(201).json({
+        status: 201,
         data:{
           newInvoice,
           message: "Invoice created successfully",
-          status: 201
+
         }
       });
   } catch (error) {
@@ -634,10 +635,11 @@ export const addPayment = async (req: Request, res: Response) => {
 
       await newPayment.save();
       res.status(201).json({
+        status: 201,
         data:{
           newPayment,
           message: "Payment created successfully",
-          status: 201
+
         }
       });
   } catch (error) {
