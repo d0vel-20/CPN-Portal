@@ -559,7 +559,18 @@ export const getInvoiceById = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    const invoice = await Invoice.findById(id);
+    const invoice = await Invoice.findById(id).populate({
+      path: "payment_plan_id",
+      model: Paymentplan,
+      select:
+      "amount installments estimate last_payment_date next_payment_date reg_date",
+      populate: {
+        path: "course_id",
+        model: Course,
+        select: "title duration amount",
+      },
+    });
+
 
     if (!invoice) {
       return res.status(404).json({
