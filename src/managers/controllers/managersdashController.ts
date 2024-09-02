@@ -646,7 +646,7 @@ export const addPayment = async (req: Request, res: Response) => {
 
 
       const newPayment = new Payment({
-          user_id: student._id,
+          user_id: student,
           amount,
           payment_plan_id,
           message,
