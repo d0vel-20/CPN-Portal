@@ -3,8 +3,8 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 export interface ICourses extends Document {
     _id: Types.ObjectId;
     title: string;
-    duration: number;
-    amount: number;
+    duration: string;
+    amount: string;
 }
 
 const CourseSchema: Schema = new Schema({
