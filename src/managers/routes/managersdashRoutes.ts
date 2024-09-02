@@ -48,7 +48,7 @@ router.delete("/plan/invoice/:id", verifyToken, deleteInvoice);
 
 // manager add payment
 router.post("/students/:id/payment", verifyToken, addPayment);
-router.get("/students/payment", verifyToken, getAllPayments);
+router.get("/students/payments", verifyToken, getAllPayments);
 router.get("/students/payment/:id", verifyToken, getPaymentById);
 
 export default router;
