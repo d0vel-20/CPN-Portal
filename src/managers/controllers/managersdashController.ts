@@ -756,14 +756,18 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
 
     const payments = await Payment.find({ user_id: id }).populate({
       path: "payment_plan_id",
-      model: "Paymentplan",
+      model: Paymentplan,
       select:
-        "amount installments estimate last_payment_date next_payment_date reg_date",
-      populate: {
+      "amount installments estimate last_payment_date next_payment_date reg_date",
+      populate: [{
         path: "course_id",
-        model: "Course",
+        model: Course,
         select: "title duration amount",
-      },
+      }, {
+        path: "user_id",
+        model: Student,
+        select: "fullname email phone center student_id"
+      }],
     });
 
     if (payments.length === 0) {
