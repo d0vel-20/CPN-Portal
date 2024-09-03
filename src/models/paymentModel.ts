@@ -6,7 +6,7 @@ export interface IPayment extends Document {
   _id: Types.ObjectId;
   user_id: Types.ObjectId;
   amount: number;
-  payment_plan_id: Types.ObjectId;
+  payment_plan_id: Types.Array<Types.ObjectId>;
   message: string,
   disclaimer: string,
   payment_date: string,
@@ -24,11 +24,10 @@ const PaymentSchema: Schema = new Schema({
     type: Number,
     required: true,
   },
-  payment_plan_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-    ref: 'Paymentplan'
-  },
+  payment_plan_id: [{
+    type: Schema.Types.ObjectId,
+    ref: 'Paymentplan',
+}],
   message: {
     type: String,
     default: '',
