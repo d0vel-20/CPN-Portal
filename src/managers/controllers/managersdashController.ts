@@ -706,7 +706,7 @@ export const getPaymentById = async (req: Request, res: Response) => {
     }
 
     const payment = await Payment.findById(id).populate({
-      path: "plan",
+      path: "payment_plan_id",
       model: Paymentplan,
       select:
       "amount installments estimate last_payment_date next_payment_date reg_date",
