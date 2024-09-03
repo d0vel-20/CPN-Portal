@@ -680,23 +680,70 @@ export const addPayment = async (req: Request, res: Response) => {
 // get all payments
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
-
     const user = await getUser(req);
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    console.log('wow');
-    
-    const payments = await Payment.find();
+    // Extract pagination parameters from the request query with default values
+    const { page = 1, limit = 20, userId, minAmount, maxAmount } = req.query;
+
+    const query: any = {};
+
+    // Filter by userId if provided
+    if (userId) {
+      query.user_id = userId;
+    }
+
+    // Filter by amount range if provided
+    if (minAmount || maxAmount) {
+      query.amount = {};
+      if (minAmount) query.amount.$gte = Number(minAmount);
+      if (maxAmount) query.amount.$lte = Number(maxAmount);
+    }
+
+    // Calculate total documents and total pages
+    const totalDocuments = await Payment.countDocuments(query);
+    const totalPages = Math.ceil(totalDocuments / Number(limit));
+
+    // Fetch payments with pagination
+    const payments = await Payment.find(query)
+      .skip((Number(page) - 1) * Number(limit)) // Skip documents based on current page
+      .limit(Number(limit)) // Limit the number of documents per page
+      .populate({
+        path: "payment_plan_id",
+        model: "Paymentplan",
+        select:
+          "amount installments estimate last_payment_date next_payment_date reg_date",
+        populate: {
+          path: "course_id",
+          model: "Course",
+          select: "title duration amount",
+        },
+      });
+
+    // Construct the paginated response
+    const paginatedResponse = {
+      saved: [],
+      existingRecords: payments,
+      hasPreviousPage: Number(page) > 1,
+      previousPages: Number(page) - 1,
+      hasNextPage: Number(page) < totalPages,
+      nextPages: Number(page) + 1,
+      totalPages: totalPages,
+      totalDocuments: totalDocuments,
+      currentPage: Number(page),
+    };
 
     res.status(200).json({
-      data: payments,
       status: 200,
+      data: paginatedResponse,
     });
   } catch (error) {
+    console.error("Error fetching payments:", error);
     res.status(500).json({
-      error: "Error fetching payments",
+      data: "Internal Server Error",
+      status: 500,
       details: error,
     });
   }
