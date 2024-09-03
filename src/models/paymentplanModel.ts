@@ -6,7 +6,7 @@ export interface IPaymentplan extends Document {
   _id: Types.ObjectId;
   user_id: mongoose.Schema.Types.ObjectId;
   amount: number;
-  course_id: Types.ObjectId;
+  course_id: mongoose.Schema.Types.ObjectId;
   installments: number;
   estimate: number;
   last_payment_date: string;
@@ -27,7 +27,7 @@ const PaymentplanSchema: Schema = new Schema({
     required: true,
   },
   course_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'Course'
   },
