@@ -20,7 +20,7 @@ const PaymentplanSchema: Schema = new Schema({
   user_id: {
     type: String,
     required: true,
-    ref: ''
+    ref: 'Student'
   },
   amount: {
     type: Number,

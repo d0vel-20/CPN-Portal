@@ -638,7 +638,7 @@ export const addPayment = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    const student = await Student.findOne({_id: id, center: user.user.center});
+    const student = await Student.findById({_id: id, center: user.user.center});
     if (!student) {
       return res.status(404).json({ data: "Student not found", status: 404 });
     }
@@ -646,7 +646,7 @@ export const addPayment = async (req: Request, res: Response) => {
 
 
       const newPayment = new Payment({
-          user_id: student,
+        user_id: student._id,
           amount,
           payment_plan_id,
           message,
@@ -678,6 +678,8 @@ export const getAllPayments = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
+    console.log('wow');
+    
     const payments = await Payment.find();
 
     res.status(200).json({
