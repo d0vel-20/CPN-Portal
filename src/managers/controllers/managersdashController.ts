@@ -10,7 +10,7 @@ import mongoose from "mongoose";
 import { populate } from "dotenv";
 import Invoice from "../../models/invoiceModel";
 import Payment from "../../models/paymentModel";
-import cron from 'node-cron';
+import cron from "node-cron";
 
 // create student
 export const createStudent = async (req: Request, res: Response) => {
@@ -190,19 +190,19 @@ export const getStudentById = async (req: Request, res: Response) => {
       _id: id,
       center: user.user.center,
     }).populate({
-        path: "plan",
-        model: Paymentplan,
-        // populate: {
-        // path: '_id', // Adjust based on your needs
-        select:
-          "amount installments estimate last_payment_date next_payment_date reg_date",
-        populate: {
-          path: "course_id",
-          model: Course,
-          select: "title duration amount",
-        },
-        // }
-      })
+      path: "plan",
+      model: Paymentplan,
+      // populate: {
+      // path: '_id', // Adjust based on your needs
+      select:
+        "amount installments estimate last_payment_date next_payment_date reg_date",
+      populate: {
+        path: "course_id",
+        model: Course,
+        select: "title duration amount",
+      },
+      // }
+    });
     if (!student) {
       return res.status(404).json({ data: "Student Not Found", status: 404 });
     }
@@ -309,7 +309,7 @@ export const getAllStaff = async (req: Request, res: Response) => {
 
     // Add search by name if 'q' is provided
     if (q) {
-      query.$or = {fullname: {$regex:q, $options: "i"}}; // Case-insensitive search by name
+      query.$or = { fullname: { $regex: q, $options: "i" } }; // Case-insensitive search by name
     }
 
     const staff = await Staff.find(query) // Use the query with optional search criteria
@@ -423,7 +423,10 @@ export const addCourse = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    const student = await Student.findById({_id: id, center: user.user.center});
+    const student = await Student.findById({
+      _id: id,
+      center: user.user.center,
+    });
     if (!student) {
       return res.status(404).json({ data: "Student not found", status: 404 });
     }
@@ -455,69 +458,55 @@ export const addCourse = async (req: Request, res: Response) => {
     student.plan.push(paymentPlan._id);
     await student.save();
 
-    return res
-      .status(201)
-      .json({
-        data: "Payment plan created successfully",
-        paymentPlan,
-        status: 201,
-      });
+    return res.status(201).json({
+      data: "Payment plan created successfully",
+      paymentPlan,
+      status: 201,
+    });
   } catch (error) {
     console.error("Error adding payment plan:", error);
-    return res
-      .status(500)
-      .json({
-        data: "Internal Server Error",
-        error: (error as any).message,
-        status: 500,
-      });
+    return res.status(500).json({
+      data: "Internal Server Error",
+      error: (error as any).message,
+      status: 500,
+    });
   }
 };
 
-
-
 // create invoice
 export const createInvoice = async (req: Request, res: Response) => {
-
   const { amount, payment_plan_id, message, disclaimer, due_date } = req.body;
 
   try {
-
     const user = await getUser(req);
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
+    const newInvoice = new Invoice({
+      amount,
+      payment_plan_id,
+      message,
+      disclaimer,
+      due_date,
+    });
 
-
-
-      const newInvoice = new Invoice({
-          amount,
-          payment_plan_id,
-          message,
-          disclaimer,
-          due_date
-      });
-
-      await newInvoice.save();
-      res.status(201).json({
-        status: 201,
-        data:{
-          newInvoice,
-          message: "Invoice created successfully",
-
-        }
-      });
+    await newInvoice.save();
+    res.status(201).json({
+      status: 201,
+      data: {
+        newInvoice,
+        message: "Invoice created successfully",
+      },
+    });
   } catch (error) {
-      res.status(500).json({"Error creating invoice": error});
+    res.status(500).json({ "Error creating invoice": error });
   }
 };
-
 
 // get all invoices
 export const getAllInvoices = async (req: Request, res: Response) => {
   try {
-
     const user = await getUser(req);
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
@@ -527,16 +516,19 @@ export const getAllInvoices = async (req: Request, res: Response) => {
       path: "payment_plan_id",
       model: Paymentplan,
       select:
-      "amount installments estimate last_payment_date next_payment_date reg_date",
-      populate: [{
-        path: "course_id",
-        model: Course,
-        select: "title duration amount",
-      }, {
-        path: "user_id",
-        model: Student,
-        select: "fullname email phone center student_id"
-      }],
+        "amount installments estimate last_payment_date next_payment_date reg_date",
+      populate: [
+        {
+          path: "course_id",
+          model: Course,
+          select: "title duration amount",
+        },
+        {
+          path: "user_id",
+          model: Student,
+          select: "fullname email phone center student_id",
+        },
+      ],
     });
 
     res.status(200).json({
@@ -551,13 +543,11 @@ export const getAllInvoices = async (req: Request, res: Response) => {
   }
 };
 
-
 // get single invoice
 export const getInvoiceById = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-
     const user = await getUser(req);
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
@@ -567,18 +557,20 @@ export const getInvoiceById = async (req: Request, res: Response) => {
       path: "payment_plan_id",
       model: Paymentplan,
       select:
-      "amount installments estimate last_payment_date next_payment_date reg_date",
-      populate: [{
-        path: "course_id",
-        model: Course,
-        select: "title duration amount",
-      }, {
-        path: "user_id",
-        model: Student,
-        select: "fullname email phone center student_id"
-      }],
+        "amount installments estimate last_payment_date next_payment_date reg_date",
+      populate: [
+        {
+          path: "course_id",
+          model: Course,
+          select: "title duration amount",
+        },
+        {
+          path: "user_id",
+          model: Student,
+          select: "fullname email phone center student_id",
+        },
+      ],
     });
-
 
     if (!invoice) {
       return res.status(404).json({
@@ -604,7 +596,6 @@ export const deleteInvoice = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-
     const user = await getUser(req);
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
@@ -631,51 +622,47 @@ export const deleteInvoice = async (req: Request, res: Response) => {
   }
 };
 
-
-
-
 // add payment
 export const addPayment = async (req: Request, res: Response) => {
-  const {id} = req.params
-  const { amount, payment_plan_id, message, disclaimer, payment_date } = req.body;
+  const { id } = req.params;
+  const { amount, payment_plan_id, message, disclaimer, payment_date } =
+    req.body;
 
   try {
-
     const user = await getUser(req);
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    const student = await Student.findById({_id: id, center: user.user.center});
+    const student = await Student.findById({
+      _id: id,
+      center: user.user.center,
+    });
     if (!student) {
       return res.status(404).json({ data: "Student not found", status: 404 });
     }
 
+    const newPayment = new Payment({
+      user_id: student._id,
+      amount,
+      payment_plan_id,
+      message,
+      disclaimer,
+      payment_date,
+    });
 
-
-      const newPayment = new Payment({
-        user_id: student._id,
-          amount,
-          payment_plan_id,
-          message,
-          disclaimer,
-          payment_date
-      });
-
-      await newPayment.save();
-      res.status(201).json({
-        status: 201,
-        data:{
-          newPayment,
-          message: "Payment created successfully",
-
-        }
-      });
+    await newPayment.save();
+    res.status(201).json({
+      status: 201,
+      data: {
+        newPayment,
+        message: "Payment created successfully",
+      },
+    });
   } catch (error) {
-      res.status(500).json({ "Error creating payment": error });
+    res.status(500).json({ "Error creating payment": error });
   }
 };
-
 
 // get all payments
 export const getAllPayments = async (req: Request, res: Response) => {
@@ -712,14 +699,21 @@ export const getAllPayments = async (req: Request, res: Response) => {
       .limit(Number(limit)) // Limit the number of documents per page
       .populate({
         path: "payment_plan_id",
-        model: "Paymentplan",
+        model: Paymentplan,
         select:
           "amount installments estimate last_payment_date next_payment_date reg_date",
-        populate: {
-          path: "course_id",
-          model: "Course",
-          select: "title duration amount",
-        },
+        populate: [
+          {
+            path: "course_id",
+            model: Course,
+            select: "title duration amount",
+          },
+          {
+            path: "user_id",
+            model: Student,
+            select: "fullname email phone center student_id",
+          },
+        ],
       });
 
     // Construct the paginated response
@@ -754,7 +748,6 @@ export const getPaymentById = async (req: Request, res: Response) => {
   const { id } = req.params;
 
   try {
-
     const user = await getUser(req);
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
@@ -764,11 +757,19 @@ export const getPaymentById = async (req: Request, res: Response) => {
       path: "payment_plan_id",
       model: Paymentplan,
       select:
-      "amount installments estimate last_payment_date next_payment_date reg_date",
-    populate: {
-      path: "course_id",
-      model: Course,
-      select: "title duration amount",},
+        "amount installments estimate last_payment_date next_payment_date reg_date",
+      populate: [
+        {
+          path: "course_id",
+          model: Course,
+          select: "title duration amount",
+        },
+        {
+          path: "user_id",
+          model: Student,
+          select: "fullname email phone center student_id",
+        },
+      ],
     });
 
     if (!payment) {
@@ -790,7 +791,6 @@ export const getPaymentById = async (req: Request, res: Response) => {
   }
 };
 
-
 // get all payment for a student
 export const getPaymentsByStudentId = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -805,24 +805,27 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
       path: "payment_plan_id",
       model: Paymentplan,
       select:
-      "amount installments estimate last_payment_date next_payment_date reg_date",
-      populate: [{
-        path: "course_id",
-        model: Course,
-        select: "title duration amount",
-      }, {
-        path: "user_id",
-        model: Student,
-        select: "fullname email phone center student_id"
-      }],
+        "amount installments estimate last_payment_date next_payment_date reg_date",
+      populate: [
+        {
+          path: "course_id",
+          model: Course,
+          select: "title duration amount",
+        },
+        {
+          path: "user_id",
+          model: Student,
+          select: "fullname email phone center student_id",
+        },
+      ],
     });
 
-    if (payments.length === 0) {
-      return res.status(404).json({
-        data: "No payments found for the student",
-        status: 404,
-      });
-    }
+    // if (payments.length === 0) {
+    //   return res.status(404).json({
+    //     data: "No payments found for the student",
+    //     status: 404,
+    //   });
+    // }
 
     res.status(200).json({
       data: payments,
@@ -836,4 +839,39 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
   }
 };
 
+export async function getPlanBalance(req: Request, res: Response) {
+  const { id } = req.params;
+  try {
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
 
+    const plan = await Paymentplan.findById(id);
+    if (!plan) {
+      return res.status(404).json({ data: "gerrout", status: 404 });
+    }
+
+    const payments = await Payment.find({ payment_plan_id: id });
+    if (!payments || !payments.length) {
+      return res.status(200).json({ data: "0", status: 200 });
+    }
+    const toBePaid = Number(plan.amount);
+    let paid = 0;
+    payments.forEach(payment=>{
+      paid += Number(payment.amount)
+    })
+
+    const balance = Math.abs(toBePaid - paid);
+    return res.status(200).json({ data: `${balance}`, status: 200 });
+
+
+  } catch (error) {
+    console.error(error);
+    
+    res.status(500).json({
+      error: "Error fetching balance for the student",
+      details: error,
+    });
+  }
+}

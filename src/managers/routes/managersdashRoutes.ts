@@ -18,7 +18,8 @@ import {
   deleteInvoice,
   getAllPayments,
   getPaymentById,
-  getPaymentsByStudentId
+  getPaymentsByStudentId,
+  getPlanBalance
 } from "../../managers/controllers/managersdashController";
 import verifyToken from "../../middlewares/authMiddleware";
 
@@ -53,5 +54,6 @@ router.post("/students/:id/payment", verifyToken, addPayment);
 router.get("/student/payments", verifyToken, getAllPayments);
 router.get("/student/payment/:id", verifyToken, getPaymentById);
 router.get('/payments/student/:id', getPaymentsByStudentId);
+router.get('/payments/balance/:id', getPlanBalance);
 
 export default router;
