@@ -11,6 +11,7 @@ import { populate } from "dotenv";
 import Invoice from "../../models/invoiceModel";
 import Payment from "../../models/paymentModel";
 import cron from "node-cron";
+import Center from "../../models/centerModel";
 
 // create student
 export const createStudent = async (req: Request, res: Response) => {
@@ -527,6 +528,11 @@ export const getAllInvoices = async (req: Request, res: Response) => {
           path: "user_id",
           model: Student,
           select: "fullname email phone center student_id",
+          populate:[{
+            path: "center",
+            model: Center,
+            select: "name location code"
+          }]
         },
       ],
     });
@@ -568,6 +574,11 @@ export const getInvoiceById = async (req: Request, res: Response) => {
           path: "user_id",
           model: Student,
           select: "fullname email phone center student_id",
+          populate:[{
+            path: "center",
+            model: Center,
+            select: "name location code"
+          }]
         },
       ],
     });
@@ -712,6 +723,11 @@ export const getAllPayments = async (req: Request, res: Response) => {
             path: "user_id",
             model: Student,
             select: "fullname email phone center student_id",
+            populate:[{
+              path: "center",
+              model: Center,
+              select: "name location code"
+            }]
           },
         ],
       });
@@ -768,6 +784,11 @@ export const getPaymentById = async (req: Request, res: Response) => {
           path: "user_id",
           model: Student,
           select: "fullname email phone center student_id",
+          populate:[{
+            path: "center",
+            model: Center,
+            select: "name location code"
+          }]
         },
       ],
     });
@@ -816,6 +837,11 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
           path: "user_id",
           model: Student,
           select: "fullname email phone center student_id",
+          populate:[{
+            path: "center",
+            model: Center,
+            select: "name location code"
+          }]
         },
       ],
     });
