@@ -12,6 +12,7 @@ import Invoice from "../../models/invoiceModel";
 import Payment from "../../models/paymentModel";
 import cron from "node-cron";
 import Center from "../../models/centerModel";
+import nodemailer from 'nodemailer';
 
 // create student
 export const createStudent = async (req: Request, res: Response) => {
@@ -865,6 +866,35 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
   }
 };
 
+
+async function sendEmail(to: string, subject: string, text: string) {
+  // Create a transporter object using the default SMTP transport
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail', // You can use other services like Yahoo, Outlook, etc.
+    auth: {
+      user: 'your-email@gmail.com', // Replace with your email
+      pass: 'your-email-password', // Replace with your email password
+    },
+  });
+
+  // Setup email data
+  const mailOptions = {
+    from: 'your-email@gmail.com', // Sender address
+    to, // Manager's email address
+    subject, // Subject line
+    text, // Plain text body
+  };
+
+  // Send mail with defined transport object
+  await transporter.sendMail(mailOptions);
+}
+
+
+
+
+
+
+
 export async function getPlanBalance(req: Request, res: Response) {
   const { id } = req.params;
   try {
@@ -889,6 +919,17 @@ export async function getPlanBalance(req: Request, res: Response) {
     })
 
     const balance = Math.abs(toBePaid - paid);
+
+        // If there's a remaining balance, send an email to the manager
+        // if (balance > 0) {
+        //   const managerEmail = "nwanebij@gmail.com"; // Replace with the manager's email address
+        //   const emailSubject = "Remaining Payment Notification";
+        //   const emailText = `Dear Manager,\n\nThe student with plan ID ${id} has a remaining balance of ${balance} to be paid.\n\nBest regards,\nYour System`;
+    
+        //   await sendEmail(managerEmail, emailSubject, emailText);
+        // }
+
+
     return res.status(200).json({ data: `${balance}`, status: 200 });
 
 
@@ -901,3 +942,6 @@ export async function getPlanBalance(req: Request, res: Response) {
     });
   }
 }
+
+
+
