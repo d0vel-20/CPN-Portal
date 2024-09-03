@@ -528,11 +528,15 @@ export const getAllInvoices = async (req: Request, res: Response) => {
       model: Paymentplan,
       select:
       "amount installments estimate last_payment_date next_payment_date reg_date",
-      populate: {
+      populate: [{
         path: "course_id",
         model: Course,
         select: "title duration amount",
-      },
+      }, {
+        path: "user_id",
+        model: Student,
+        select: "fullname email phone center student_id"
+      }],
     });
 
     res.status(200).json({
@@ -564,11 +568,15 @@ export const getInvoiceById = async (req: Request, res: Response) => {
       model: Paymentplan,
       select:
       "amount installments estimate last_payment_date next_payment_date reg_date",
-      populate: {
+      populate: [{
         path: "course_id",
         model: Course,
         select: "title duration amount",
-      },
+      }, {
+        path: "user_id",
+        model: Student,
+        select: "fullname email phone center student_id"
+      }],
     });
 
 
@@ -735,5 +743,16 @@ export const getPaymentById = async (req: Request, res: Response) => {
   }
 };
 
+
+// get all payment for a student
+export const getAllPaymentForStudent = async (req:Request, res: Response)=>{
+  const {id} = req.params
+
+  try {
+    
+  } catch (error) {
+    
+  }
+}
 
 

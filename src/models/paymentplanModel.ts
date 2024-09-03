@@ -4,7 +4,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 // Define the interface for the Admin document
 export interface IPaymentplan extends Document {
   _id: Types.ObjectId;
-  user_id: Types.ObjectId;
+  user_id: mongoose.Schema.Types.ObjectId;
   amount: number;
   course_id: Types.ObjectId;
   installments: number;
@@ -18,7 +18,7 @@ export interface IPaymentplan extends Document {
 
 const PaymentplanSchema: Schema = new Schema({
   user_id: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'Student'
   },
