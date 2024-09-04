@@ -881,7 +881,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
         if (maxAmount) query.amount.$lte = Number(maxAmount);
       }
 
-              // Apply search by student details if studentSearch is provided
+              // search by student details if studentSearch is provided
               if (studentSearch && typeof studentSearch === "string") {
                 query["payment_plan_id.user_id"] = {
                   $or: [
@@ -893,7 +893,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
                 };
               }
 
-                  // Apply search by center details if centerSearch is provided
+                  // search by center details if centerSearch is provided
     if (centerSearch && typeof centerSearch === "string") {
         query["payment_plan_id.user_id.center"] = {
           $or: [

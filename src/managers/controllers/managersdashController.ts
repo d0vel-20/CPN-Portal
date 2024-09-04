@@ -685,7 +685,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
     }
 
     // Extract pagination parameters from the request query with default values
-    const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch } = req.query;
+    const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, courseSearch } = req.query;
 
     const query: any = {};
 
@@ -701,7 +701,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
       if (maxAmount) query.amount.$lte = Number(maxAmount);
     }
 
-        // Apply search by student details if studentSearch is provided
+        // search by student details if studentSearch is provided
         if (studentSearch && typeof studentSearch === "string") {
           query["payment_plan_id.user_id"] = {
             $or: [
@@ -712,6 +712,17 @@ export const getAllPayments = async (req: Request, res: Response) => {
             ],
           };
         }
+
+
+            // search by course if courseSearch is provided
+    if (courseSearch && typeof courseSearch === "string") {
+      query["payment_plan_id.course_id"] = {
+        $or: [
+          { title: new RegExp(courseSearch, "i") },
+          { duration: new RegExp(courseSearch, "i") },
+        ],
+      };
+    }
 
     // Calculate total documents and total pages
     const totalDocuments = await Payment.countDocuments(query);
