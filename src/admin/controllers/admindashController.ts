@@ -860,7 +860,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
 export const getAllPayments = async (req: Request, res: Response) => {
     try {
       const user = await getUser(req);
-      if (!user || user.isAdmin) {
+      if (!user || !user.isAdmin) {
         return res.status(401).json({ data: "Unauthorized", status: 401 });
       }
   
