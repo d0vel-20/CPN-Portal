@@ -39,18 +39,20 @@ export const getManagerProfile = async (req: Request, res: Response) => {
 // manager change password
 export const changePassword = async (req: Request, res: Response) => {
   try {
-      const { email, currentPassword, newPassword } = req.body;
+      const { currentPassword, newPassword } = req.body;
 
-      // Find the manager by email
-      const manager = await Manager.findOne({ email });
-      if (!manager) {
-          return res.status(404).json({ error: 'Manager not found' });
+      // Retrieve the authenticated user
+      const authUser = await getUser(req);
+      if (!authUser || authUser.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
       }
 
-      // Check if the current password matches
+      const manager = authUser.user; 
+
+      // Validate the current password
       const isMatch = await bcrypt.compare(currentPassword, manager.password);
       if (!isMatch) {
-          return res.status(400).json({ error: 'Current password is incorrect' });
+          return res.status(400).json({ data: 'Current password is incorrect', status: 400 });
       }
 
       // Hash the new password
@@ -61,12 +63,13 @@ export const changePassword = async (req: Request, res: Response) => {
       manager.password = hashedPassword;
       await manager.save();
 
-      return res.status(200).json({ message: 'Password updated successfully' });
+      return res.status(200).json({ data: 'Password updated successfully', status: 200 });
   } catch (error) {
-      console.error(error);
-      return res.status(500).json({ error: 'Internal server error' });
+      console.error('Error updating password:', error);
+      return res.status(500).json({ data: 'Internal server error', status: 500 });
   }
 };
+
 
 
 
