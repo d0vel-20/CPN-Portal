@@ -865,7 +865,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
       }
   
       // Extract pagination parameters from the request query with default values
-      const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, centerSearch } = req.query;
+      const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, centerSearch, centerId } = req.query;
   
       const query: any = {};
   
@@ -902,6 +902,11 @@ export const getAllPayments = async (req: Request, res: Response) => {
             { code: new RegExp(centerSearch, "i") },
           ],
         };
+      }
+
+          // Filter by centerId if provided
+    if (centerId) {
+        query["payment_plan_id.user_id.center"] = centerId;
       }
   
       // Calculate total documents and total pages
