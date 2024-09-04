@@ -41,16 +41,16 @@ export const changePassword = async (req: Request, res: Response) => {
   try {
       const { currentPassword, newPassword } = req.body;
 
-      // Retrieve the authenticated user
+      // Retrieve the authenticated user (admin or manager) from the session
       const authUser = await getUser(req);
-      if (!authUser || authUser.isAdmin) {
+      if (!authUser) {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
       }
 
-      const manager = authUser.user; 
+      const { user, isAdmin } = authUser;
 
-      // Validate the current password
-      const isMatch = await bcrypt.compare(currentPassword, manager.password);
+      // Validate the current password based on user type
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
       if (!isMatch) {
           return res.status(400).json({ data: 'Current password is incorrect', status: 400 });
       }
@@ -60,8 +60,8 @@ export const changePassword = async (req: Request, res: Response) => {
       const hashedPassword = await bcrypt.hash(newPassword, salt);
 
       // Update the password in the database
-      manager.password = hashedPassword;
-      await manager.save();
+      user.password = hashedPassword;
+      await user.save();
 
       return res.status(200).json({ data: 'Password updated successfully', status: 200 });
   } catch (error) {
