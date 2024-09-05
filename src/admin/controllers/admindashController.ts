@@ -1021,5 +1021,57 @@ export const getAllPayments = async (req: Request, res: Response) => {
     }
   };
   
+// get single invoice
+  export const getInvoiceById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+  
+    try {
+      const user = await getUser(req);
+      if (!user || !user.isAdmin) {
+        return res.status(401).json({ data: "Unauthorized", status: 401 });
+      }
+  
+      const invoice = await Invoice.findById(id).populate({
+        path: "payment_plan_id",
+        model: Paymentplan,
+        select:
+          "amount installments estimate last_payment_date next_payment_date reg_date",
+        populate: [
+          {
+            path: "course_id",
+            model: Course,
+            select: "title duration amount",
+          },
+          {
+            path: "user_id",
+            model: Student,
+            select: "fullname email phone center student_id",
+            populate:[{
+              path: "center",
+              model: Center,
+              select: "name location code"
+            }]
+          },
+        ],
+      });
+  
+      if (!invoice) {
+        return res.status(404).json({
+          data: "Invoice not found",
+          status: 404,
+        });
+      }
+  
+      res.status(200).json({
+        data: invoice,
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error fetching the invoice",
+        details: error,
+      });
+    }
+  };
   
  
