@@ -892,30 +892,16 @@ export const getAllInvoices = async (req: Request, res: Response) => {
         };
       }
   
-      // Search by center details if centerSearch is provided
-      if (centerSearch && typeof centerSearch === "string") {
-        query["payment_plan_id.user_id.center"] = {
-          $or: [
-            { name: new RegExp(centerSearch, "i") },
-            { location: new RegExp(centerSearch, "i") },
-            { code: new RegExp(centerSearch, "i") },
-          ],
-        };
-      }
   
       // Filter by centerId if provided
       if (centerId) {
         query["payment_plan_id.user_id.center"] = centerId;
       }
   
-      // Filter by course details if courseSearch is provided
-      if (courseSearch && typeof courseSearch === "string") {
-        query["payment_plan_id.course_id"] = {
-          $or: [
-            { title: new RegExp(courseSearch, "i") },
-            { duration: new RegExp(courseSearch, "i") },
-          ],
-        };
+
+          // Course filter
+    if (courseSearch) {
+        query["payment_plan_id.course_id"] = courseSearch;
       }
   
       // Calculate total documents and total pages
