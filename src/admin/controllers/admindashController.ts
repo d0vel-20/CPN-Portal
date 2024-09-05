@@ -967,5 +967,59 @@ export const getAllPayments = async (req: Request, res: Response) => {
       });
     }
   };
+
+
+  export const getPaymentById = async (req: Request, res: Response) => {
+    const { id } = req.params;
+  
+    try {
+      const user = await getUser(req);
+      if (!user || !user.isAdmin) {
+        return res.status(401).json({ data: "Unauthorized", status: 401 });
+      }
+  
+      const payment = await Payment.findById(id).populate({
+        path: "payment_plan_id",
+        model: Paymentplan,
+        select:
+          "amount installments estimate last_payment_date next_payment_date reg_date",
+        populate: [
+          {
+            path: "course_id",
+            model: Course,
+            select: "title duration amount",
+          },
+          {
+            path: "user_id",
+            model: Student,
+            select: "fullname email phone center student_id",
+            populate:[{
+              path: "center",
+              model: Center,
+              select: "name location code"
+            }]
+          },
+        ],
+      });
+  
+      if (!payment) {
+        return res.status(404).json({
+          data: "Payment not found",
+          status: 404,
+        });
+      }
+  
+      res.status(200).json({
+        data: payment,
+        status: 200,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error fetching the payment",
+        details: error,
+      });
+    }
+  };
+  
   
  
