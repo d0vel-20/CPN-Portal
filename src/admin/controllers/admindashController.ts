@@ -973,10 +973,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
     const { id } = req.params;
   
     try {
-        const user = await getUser(req);
-        if (!user || !user.isAdmin) {
-          return res.status(401).json({ data: "Unauthorized", status: 401 });
-        }
+
   
       const payment = await Payment.findById(id).populate({
         path: "payment_plan_id",
