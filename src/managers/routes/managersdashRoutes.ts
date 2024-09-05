@@ -53,7 +53,7 @@ router.delete("/plan/invoice/:id", verifyToken, deleteInvoice);
 router.post("/students/:id/payment", verifyToken, addPayment);
 router.get("/student/payments", verifyToken, getAllPayments);
 router.get("/student/payment/:id", verifyToken, getPaymentById);
-router.get('/payments/student/:id', getPaymentsByStudentId);
-router.get('/payments/balance/:id', getPlanBalance);
+router.get('/payments/student/:id', verifyToken, getPaymentsByStudentId);
+router.get('/payments/balance/:id', verifyToken, getPlanBalance);
 
 export default router;
