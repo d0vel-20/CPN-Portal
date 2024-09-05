@@ -44,7 +44,7 @@ router.get("/plan/invoice", verifyToken, getAllInvoices);
 
 // Get all payments
 router.get("/student/payments", verifyToken, getAllPayments);
-router.get("/student/payment/:id", getPaymentById);
+router.get("/student/payment/:id", verifyToken, getPaymentById);
 
 
 
