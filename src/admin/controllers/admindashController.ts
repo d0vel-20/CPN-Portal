@@ -857,15 +857,14 @@ export const getAllInvoices = async (req: Request, res: Response) => {
   };
 
   // get all payments
-export const getAllPayments = async (req: Request, res: Response) => {
+  export const getAllPayments = async (req: Request, res: Response) => {
     try {
       const user = await getUser(req);
       if (!user || !user.isAdmin) {
         return res.status(401).json({ data: "Unauthorized", status: 401 });
       }
   
-      // Extract pagination parameters from the request query with default values
-      const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, centerSearch, centerId } = req.query;
+      const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, centerSearch, centerId, courseSearch } = req.query;
   
       const query: any = {};
   
@@ -880,21 +879,21 @@ export const getAllPayments = async (req: Request, res: Response) => {
         if (minAmount) query.amount.$gte = Number(minAmount);
         if (maxAmount) query.amount.$lte = Number(maxAmount);
       }
-
-              // search by student details if studentSearch is provided
-              if (studentSearch && typeof studentSearch === "string") {
-                query["payment_plan_id.user_id"] = {
-                  $or: [
-                    { fullname: new RegExp(studentSearch, "i") },
-                    { email: new RegExp(studentSearch, "i") },
-                    { phone: new RegExp(studentSearch, "i") },
-                    { student_id: new RegExp(studentSearch, "i") },
-                  ],
-                };
-              }
-
-                  // search by center details if centerSearch is provided
-    if (centerSearch && typeof centerSearch === "string") {
+  
+      // Search by student details if studentSearch is provided
+      if (studentSearch && typeof studentSearch === "string") {
+        query["payment_plan_id.user_id"] = {
+          $or: [
+            { fullname: new RegExp(studentSearch, "i") },
+            { email: new RegExp(studentSearch, "i") },
+            { phone: new RegExp(studentSearch, "i") },
+            { student_id: new RegExp(studentSearch, "i") },
+          ],
+        };
+      }
+  
+      // Search by center details if centerSearch is provided
+      if (centerSearch && typeof centerSearch === "string") {
         query["payment_plan_id.user_id.center"] = {
           $or: [
             { name: new RegExp(centerSearch, "i") },
@@ -903,10 +902,20 @@ export const getAllPayments = async (req: Request, res: Response) => {
           ],
         };
       }
-
-          // Filter by centerId if provided
-    if (centerId) {
+  
+      // Filter by centerId if provided
+      if (centerId) {
         query["payment_plan_id.user_id.center"] = centerId;
+      }
+  
+      // Filter by course details if courseSearch is provided
+      if (courseSearch && typeof courseSearch === "string") {
+        query["payment_plan_id.course_id"] = {
+          $or: [
+            { title: new RegExp(courseSearch, "i") },
+            { duration: new RegExp(courseSearch, "i") },
+          ],
+        };
       }
   
       // Calculate total documents and total pages
@@ -915,13 +924,12 @@ export const getAllPayments = async (req: Request, res: Response) => {
   
       // Fetch payments with pagination
       const payments = await Payment.find(query)
-        .skip((Number(page) - 1) * Number(limit)) // Skip documents based on current page
-        .limit(Number(limit)) // Limit the number of documents per page
+        .skip((Number(page) - 1) * Number(limit))
+        .limit(Number(limit))
         .populate({
           path: "payment_plan_id",
           model: Paymentplan,
-          select:
-            "amount installments estimate last_payment_date next_payment_date reg_date",
+          select: "amount installments estimate last_payment_date next_payment_date reg_date",
           populate: [
             {
               path: "course_id",
@@ -932,7 +940,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
               path: "user_id",
               model: Student,
               select: "fullname email phone center student_id",
-              populate:[{
+              populate: [{
                 path: "center",
                 model: Center,
                 select: "name location code"
@@ -967,7 +975,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
       });
     }
   };
-
+  
 
   export const getPaymentById = async (req: Request, res: Response) => {
     const { id } = req.params;
