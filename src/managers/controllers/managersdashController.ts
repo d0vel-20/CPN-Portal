@@ -943,10 +943,6 @@ async function sendEmail(to: string, subject: string, text: string) {
 export async function getPlanBalance(req: Request, res: Response) {
   const { id } = req.params;
   try {
-    const user = await getUser(req);
-    if (!user || user.isAdmin) {
-      return res.status(401).json({ data: "Unauthorized", status: 401 });
-    }
 
     const plan = await Paymentplan.findById(id);
     if (!plan) {
