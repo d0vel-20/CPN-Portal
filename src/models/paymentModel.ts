@@ -41,7 +41,13 @@ const PaymentSchema: Schema = new Schema({
     required: true,
   },
 },
-{timestamps: true}
+{
+  timestamps: true,
+  toObject: { virtuals: true},
+  toJSON: { virtuals: true },
+  
+}
+
 );
 
 

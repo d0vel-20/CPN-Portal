@@ -864,7 +864,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
         return res.status(401).json({ data: "Unauthorized", status: 401 });
       }
   
-      const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, centerSearch, centerId, courseSearch } = req.query;
+      const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, centerId, courseSearch } = req.query;
   
       const query: any = {};
   
