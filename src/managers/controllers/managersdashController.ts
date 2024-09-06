@@ -657,6 +657,16 @@ export const addPayment = async (req: Request, res: Response) => {
     if (!student) {
       return res.status(404).json({ data: "Student not found", status: 404 });
     }
+    
+
+        // Find the payment plan to get the last payment date
+        const paymentPlan = await Paymentplan.findById(payment_plan_id);
+        if (!paymentPlan) {
+          return res.status(404).json({ data: "Payment plan not found", status: 404 });
+        }
+
+            // Use the next payment date from the payment plan as the last payment date
+    const lastPaymentDate = paymentPlan.next_payment_date || payment_date;
 
     const newPayment = new Payment({
       user_id: student._id,
@@ -665,9 +675,17 @@ export const addPayment = async (req: Request, res: Response) => {
       message,
       disclaimer,
       payment_date,
+      lastPaymentDate,
     });
 
     await newPayment.save();
+
+    // Update the next payment date in the payment plan
+    const nextPaymentDate = moment(lastPaymentDate).add(1, 'months').toISOString(); // Convert Moment to ISO string
+    paymentPlan.next_payment_date = nextPaymentDate; // Assign as an ISO string
+    await paymentPlan.save();
+
+
     res.status(201).json({
       status: 201,
       data: {
