@@ -5,7 +5,6 @@ import Course from "../../models/courseModel";
 import Paymentplan from "../../models/paymentplanModel";
 import { Paginated } from "../../types/pagination.types";
 import Staff from "../../models/staffModel";
-import { calculateNextPaymentDate } from "../../utils/calculateNextPaymentDate";
 import mongoose from "mongoose";
 import { populate } from "dotenv";
 import Invoice from "../../models/invoiceModel";
@@ -13,6 +12,7 @@ import Payment from "../../models/paymentModel";
 import cron from "node-cron";
 import Center from "../../models/centerModel";
 import nodemailer from 'nodemailer';
+import moment from "moment";
 
 // create student
 export const createStudent = async (req: Request, res: Response) => {
@@ -414,9 +414,10 @@ export const deleteStaff = async (req: Request, res: Response) => {
 };
 
 // add course to student
+
+
 export const addCourse = async (req: Request, res: Response) => {
   const { id } = req.params;
-
   const { amount, course_id, installments, reg_date } = req.body;
 
   try {
@@ -438,12 +439,15 @@ export const addCourse = async (req: Request, res: Response) => {
       return res.status(404).json({ data: "Course not found", status: 404 });
     }
 
+    // Assuming course.duration is in months
     const courseDuration = Number(course.duration);
     const estimate = +amount / +installments;
-    const next_payment_date = calculateNextPaymentDate(
-      courseDuration,
-      +installments
-    );
+
+    // Calculate interval between payments based on installments and course duration
+    const intervalInMonths = courseDuration / +installments;
+
+    // Calculate the next payment date from the registration date
+    const next_payment_date = moment(reg_date).add(intervalInMonths, 'months');
 
     const paymentPlan = new Paymentplan({
       user_id: student._id,
