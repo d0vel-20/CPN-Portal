@@ -482,48 +482,25 @@ export const editCourse = async (req: Request, res: Response) => {
 
 // get all courses
 export const getAllCourses = async (req: Request, res: Response) => {
-    try {
+  try {
 
-        const user = await getUser(req);
-        if (!user) {
-          return res.status(401).json({ data: 'Unauthorized', status: 401 });
-        }
 
-        // Get page and limit from query parameters
-        const page = parseInt(req.query.page as string, 10) || 1; // Default to page 1 if not provided
-        const limit = parseInt(req.query.limit as string, 10) || 10; // Default to 10 items per page if not provided
+      // Fetch all courses without pagination
+      const courses = await Course.find();
 
-        // Validate page and limit
-        if (page < 1 || limit < 1) {
-            return res.status(400).json({ data: 'Invalid page or limit', status: 400 });
-        }
-
-        // Calculate the number of items to skip
-        const skip = (page - 1) * limit;
-
-        // Get the total number of courses
-        const totalCourses = await Course.countDocuments();
-
-        // Fetch the courses with pagination
-        const courses = await Course.find()
-            .skip(skip)
-            .limit(limit);
-
-        return res.status(200).json({
-            status: 200,
-            data: {
-                courses,
-                totalCourses,
-                currentPage: page,
-                totalPages: Math.ceil(totalCourses / limit),
-                message: 'Courses Retrieved Successfully',
-            }
-        });
-    } catch (error) {
-        console.error('Error Retrieving Courses:', error);
-        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
-    }
+      return res.status(200).json({
+          status: 200,
+          data: {
+              courses,
+              message: 'Courses Retrieved Successfully',
+          }
+      });
+  } catch (error) {
+      console.error('Error Retrieving Courses:', error);
+      return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+  }
 };
+
 
 // get individual course
 export const getCourseById = async (req: Request, res: Response) => {

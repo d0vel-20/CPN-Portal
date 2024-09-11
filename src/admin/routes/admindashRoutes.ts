@@ -23,7 +23,7 @@ router.patch('/managers/:id', verifyToken, editManager)
 // Admin Create Courses
 router.post('/courses', verifyToken, createCourse);
 router.patch('/courses/:id', verifyToken, editCourse);
-router.get('/courses', verifyToken, getAllCourses);
+router.get('/courses', getAllCourses);
 router.get('/courses/:id', verifyToken, getCourseById);
 router.delete('/courses/:id', verifyToken, deleteCourse);
 
