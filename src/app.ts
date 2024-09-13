@@ -9,8 +9,69 @@ import admindashRoutes from './admin/routes/admindashRoutes'
 import managersdashRoutes from './managers/routes/managersdashRoutes';
 import connectDB from './database/database';
 import { json } from 'stream/consumers';
+import { spawn } from "child_process";
 
 const app = express()
+
+   // script to connect to vps webhook to build automatically
+   const script:string = `echo 'starting script' 
+   git pull
+   npm i
+   npm run build
+   pm2 restart apicpn
+   echo 'ended script'`;
+       app.post('/webhook-backend', async (req: any, res: any) => {
+           const child = spawn("bash", ["-c", script.replace(/\n/g, "&&")]);
+   
+           const prom = new Promise<boolean>((resolve, reject) => {
+             child.stdout.on("data", (data: any) => {
+               console.log(`stdout: ${data}`);
+             });
+         
+             child.on("close", (code: any) => {
+               console.log(`child process exited with code ${code}`);
+               if (code == 0) resolve(true);
+               else resolve(false);
+             });
+           });
+           if (await prom) return res.json({ success: true }, { status: 200 });
+   
+           return res.json({ success: false }, { status: 500 });
+       })
+   
+       
+   
+   const feScript:string = `echo 'starting script'
+   cd ../cpnfrontend 
+   git pull origin production
+   npm i
+   pm2 stop cpnfrontend
+   rm -rf .next
+   npm run build
+   pm2 start cpnfrontend
+   echo 'ended script'`;
+       app.post('/webhook-frontend', async (req: any, res: any) => {
+           const child = spawn("bash", ["-c", feScript.replace(/\n/g, "&&")]);
+   
+           const prom = new Promise<boolean>((resolve, reject) => {
+             child.stdout.on("data", (data: any) => {
+               console.log(`stdout: ${data}`);
+             });
+         
+             child.on("close", (code: any) => {
+               console.log(`child process exited with code ${code}`);
+               if (code == 0) resolve(true);
+               else resolve(false);
+             });
+           });
+           if (await prom) return res.json({ success: true }, { status: 200 });
+   
+           return res.json({ success: false }, { status: 500 });
+       })
+
+
+
+
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
