@@ -21,7 +21,7 @@ const app = express()
    pm2 restart apicpn
    echo 'ended script'`;
        app.post('/webhook-backend', async (req: any, res: any) => {
-           const child = spawn("bash", ["-c", script.replace(/\n/g, "&&")]);
+           const child = spawn("cmd", ["/c", script.replace(/\n/g, "&&")]);
    
            const prom = new Promise<boolean>((resolve, reject) => {
              child.stdout.on("data", (data: any) => {
@@ -51,7 +51,7 @@ const app = express()
    pm2 start cpnfrontend
    echo 'ended script'`;
        app.post('/webhook-frontend', async (req: any, res: any) => {
-           const child = spawn("bash", ["-c", feScript.replace(/\n/g, "&&")]);
+           const child = spawn("cmd", ["/c", feScript.replace(/\n/g, "&&")]);
    
            const prom = new Promise<boolean>((resolve, reject) => {
              child.stdout.on("data", (data: any) => {
