@@ -26,7 +26,7 @@ const PaymentplanSchema: Schema = new Schema({
     type: Number,
     required: true,
   },
-  course_id: {
+  course_id: {  
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'Course'

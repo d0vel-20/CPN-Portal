@@ -706,15 +706,49 @@ export const getAllPayments = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
+    
+
     // Extract pagination parameters from the request query with default values
-    const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, courseSearch } = req.query;
+    const { page = 1, limit = 20, center,userId, minAmount, maxAmount, studentSearch, courseSearch } = req.query;
+    let _center:any;
+    if (user.isAdmin) {
+      if (center) {
+        _center = new mongoose.Types.ObjectId(center as string); // Ensure it's an ObjectId
+      }
+    } else {
+      _center = user.user.center; // Manager's center is assigned
+    }
 
     const query: any = {};
-
-    // Filter by userId if provided
-    if (userId) {
-      query.user_id = userId;
+    
+    console.log({center});
+    
+    if (!_center || !mongoose.Types.ObjectId.isValid(_center as any)) {
+      return res.status(400).json({
+        message: "Invalid center ID provided",
+        status: 400,
+      });
     }
+
+    const centerId = new mongoose.Types.ObjectId(_center as string);
+
+
+    if (userId) {
+      const userIdString = Array.isArray(userId) ? userId[0] : userId; // Handle arrays of query parameters
+      if (typeof userIdString === "string" && mongoose.Types.ObjectId.isValid(userIdString)) {
+        query.user_id = new mongoose.Types.ObjectId(userIdString);
+      } else {
+        return res.status(400).json({
+          message: "Invalid userId provided",
+          status: 400,
+        });
+      }
+    }
+    
+
+  
+    
+
 
     // Filter by amount range if provided
     if (minAmount || maxAmount) {
@@ -753,7 +787,14 @@ export const getAllPayments = async (req: Request, res: Response) => {
     // Fetch payments with pagination
     const payments = await Payment.find(query)
       .skip((Number(page) - 1) * Number(limit)) // Skip documents based on current page
-      .limit(Number(limit)) // Limit the number of documents per page
+      .limit(Number(limit))
+       // Limit the number of documents per page
+       .populate({
+        path: "user_id", // Populate the `user_id` field
+        model: "Student",
+        match: { center: centerId }, // Apply filter to the populated documents
+        select: "fullname email phone center", // Fetch only relevant fields
+      })
       .populate({
         path: "payment_plan_id",
         model: Paymentplan,
@@ -778,10 +819,14 @@ export const getAllPayments = async (req: Request, res: Response) => {
         ],
       });
 
+      const filteredPayments = payments.filter(
+        (payment) => payment.user_id !== null
+      );
+
     // Construct the paginated response
     const paginatedResponse = {
       saved: [],
-      existingRecords: payments,
+      existingRecords: filteredPayments,
       hasPreviousPage: Number(page) > 1,
       previousPages: Number(page) - 1,
       hasNextPage: Number(page) < totalPages,

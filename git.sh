@@ -1,5 +1,5 @@
 git add .
 
-git commit -m "added student-add-course route"
+git commit -m "fixed manager get all student endpoint"
 
 git push origin main

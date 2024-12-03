@@ -1,7 +1,8 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 // Interface for Center
 export interface ICenter extends Document {
+    _id: Types.ObjectId;
     name: string;
     location: string;
     code: string;
