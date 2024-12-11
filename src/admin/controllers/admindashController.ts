@@ -761,7 +761,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
     }
 }
 
-// Delete Student with related records (Payments, Payment Plans)
+// Delete Student with related records (Payments, Payment Plans, and Invoices)
 export const deleteStudent = async (req: Request, res: Response) => {
   const { id } = req.params;
 
@@ -781,15 +781,24 @@ export const deleteStudent = async (req: Request, res: Response) => {
       await Payment.deleteMany({ user_id: student._id });
 
       // Step 3: Delete associated payment plans
-      // If the payment plans are no longer needed, delete them as well
       await Paymentplan.deleteMany({ _id: { $in: student.plan } });
 
-      // Step 4: Finally, delete the student document
+      // Step 4: Delete invoices related to the payment plans of the student
+      // First, find the payment plans associated with the student
+      const paymentPlans = await Paymentplan.find({ _id: { $in: student.plan } });
+      
+      // Get the list of invoice IDs associated with those payment plans
+      const paymentPlanIds = paymentPlans.map(plan => plan._id);
+
+      // Delete invoices associated with those payment plans
+      await Invoice.deleteMany({ payment_plan_id: { $in: paymentPlanIds } });
+
+      // Step 5: Finally, delete the student document
       await Student.findByIdAndDelete(id);
 
       return res.status(200).json({
           status: 200,
-          data: { message: 'Student and related records deleted successfully' }
+          data: { message: 'Student and related records (Payments, Payment Plans, Invoices) deleted successfully' }
       });
   } catch (error) {
       console.error('Error Deleting Student and related records:', error);
