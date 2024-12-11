@@ -844,6 +844,37 @@ export const cleanupOrphanedPaymentsAndPlans = async (req: Request, res: Respons
 };
 
 
+// Cleanup orphaned invoices (invoices not referencing any existing payment plan)
+export const cleanupOrphanedInvoices = async (req: Request, res: Response) => {
+  try {
+      // Step 1: Find orphaned invoices (invoices not referencing any payment plan)
+      const orphanedInvoices = await Invoice.find({
+          payment_plan_id: { $nin: await Paymentplan.distinct('_id') } // Invoices not referencing any existing payment plan
+      });
+
+      // Step 2: Delete orphaned invoices
+      if (orphanedInvoices.length > 0) {
+          await Invoice.deleteMany({
+              payment_plan_id: { $nin: await Paymentplan.distinct('_id') }
+          });
+
+          return res.status(200).json({
+              status: 200,
+              data: { message: 'Orphaned invoices deleted successfully' }
+          });
+      } else {
+          return res.status(200).json({
+              status: 200,
+              data: { message: 'No orphaned invoices found' }
+          });
+      }
+  } catch (error) {
+      console.error('Error cleaning up orphaned invoices:', error);
+      return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+  }
+};
+
+
 
 
 // ==================================================  END GAME ==================================================
