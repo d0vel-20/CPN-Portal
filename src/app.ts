@@ -20,7 +20,7 @@ const app = express()
    npm run build
    pm2 restart apicpn
    echo 'ended script'`;
-       app.post('/webhook-backend', async (req: any, res: any) => {
+       app.post('/api/webhook-backend', async (req: any, res: any) => {
           console.log("Webhook triggered. Starting build process...");
 
            const child = spawn("bash", ["-c", script.replace(/\n/g, "&&")]);
