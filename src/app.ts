@@ -16,11 +16,13 @@ const app = express()
    // script to connect to vps webhook to build automatically
    const script:string = `echo 'starting script' 
    git pull
-   npm i
+   npm install
    npm run build
    pm2 restart apicpn
    echo 'ended script'`;
        app.post('/webhook-backend', async (req: any, res: any) => {
+          console.log("Webhook triggered. Starting build process...");
+
            const child = spawn("bash", ["-c", script.replace(/\n/g, "&&")]);
    
            const prom = new Promise<boolean>((resolve, reject) => {
@@ -33,41 +35,47 @@ const app = express()
                if (code == 0) resolve(true);
                else resolve(false);
              });
+
            });
-           if (await prom) return res.json({ success: true }, { status: 200 });
-   
-           return res.json({ success: false }, { status: 500 });
+
+          if (await prom) {
+      console.log("Build process completed successfully.");
+      return res.status(200).json({ success: true });
+  } else {
+      console.error("Build process failed.");
+      return res.status(500).json({ success: false });
+  }
        })
    
        
    
-   const feScript:string = `echo 'starting script'
-   cd ../cpnfrontend 
-   git pull origin production
-   npm i
-   pm2 stop cpnfrontend
-   rm -rf .next
-   npm run build
-   pm2 start cpnfrontend
-   echo 'ended script'`;
-       app.post('/webhook-frontend', async (req: any, res: any) => {
-           const child = spawn("bash", ["-c", feScript.replace(/\n/g, "&&")]);
+  //  const feScript:string = `echo 'starting script'
+  //  cd ../cpnfrontend 
+  //  git pull origin production
+  //  npm i
+  //  pm2 stop cpnfrontend
+  //  rm -rf .next
+  //  npm run build
+  //  pm2 start cpnfrontend
+  //  echo 'ended script'`;
+  //      app.post('/webhook-frontend', async (req: any, res: any) => {
+  //          const child = spawn("bash", ["-c", feScript.replace(/\n/g, "&&")]);
    
-           const prom = new Promise<boolean>((resolve, reject) => {
-             child.stdout.on("data", (data: any) => {
-               console.log(`stdout: ${data}`);
-             });
+  //          const prom = new Promise<boolean>((resolve, reject) => {
+  //            child.stdout.on("data", (data: any) => {
+  //              console.log(`stdout: ${data}`);
+  //            });
          
-             child.on("close", (code: any) => {
-               console.log(`child process exited with code ${code}`);
-               if (code == 0) resolve(true);
-               else resolve(false);
-             });
-           });
-           if (await prom) return res.json({ success: true }, { status: 200 });
+  //            child.on("close", (code: any) => {
+  //              console.log(`child process exited with code ${code}`);
+  //              if (code == 0) resolve(true);
+  //              else resolve(false);
+  //            });
+  //          });
+  //          if (await prom) return res.json({ success: true }, { status: 200 });
    
-           return res.json({ success: false }, { status: 500 });
-       })
+  //          return res.json({ success: false }, { status: 500 });
+  //      })
 
 
 

@@ -20,6 +20,8 @@ export const getAdminProfile = async (req: Request, res: Response) => {
     return res.status(500).json({ data: 'invalid or expired token', status: 400});
   }
 };
+
+
 export const getManagerProfile = async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
@@ -69,12 +71,6 @@ export const changePassword = async (req: Request, res: Response) => {
       return res.status(500).json({ data: 'Internal server error', status: 500 });
   }
 };
-
-
-
-
-
-
 
 // Cron Job Endpoint
 export const cronJobEndpoint = async (req: Request, res: Response) => {

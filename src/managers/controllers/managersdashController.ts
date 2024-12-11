@@ -744,11 +744,6 @@ export const getAllPayments = async (req: Request, res: Response) => {
         });
       }
     }
-    
-
-  
-    
-
 
     // Filter by amount range if provided
     if (minAmount || maxAmount) {
@@ -849,6 +844,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 // get single payment
 export const getPaymentById = async (req: Request, res: Response) => {
