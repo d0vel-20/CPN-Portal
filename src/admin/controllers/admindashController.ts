@@ -761,30 +761,89 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
     }
 }
 
-// Delete Student
+// Delete Student with related records (Payments, Payment Plans)
 export const deleteStudent = async (req: Request, res: Response) => {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    try {
-        const user = await getUser(req);
-        if (!user || !user.isAdmin) {
+  try {
+      const user = await getUser(req);
+      if (!user || !user.isAdmin) {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
-        }
+      }
 
-        const student = await Student.findOneAndDelete({ _id: id});
-        if (!student) {
-            return res.status(404).json({ data: 'Student Not Found', status: 404 });
-        }
+      // Step 1: Find the student and associated payments
+      const student = await Student.findById(id);
+      if (!student) {
+          return res.status(404).json({ data: 'Student Not Found', status: 404 });
+      }
 
-        return res.status(200).json({
-            status: 200,
-            data: { message: 'Student Deleted Successfully' }
-        });
-    } catch (error) {
-        console.error('Error Deleting Student:', error);
-        return res.status(500).json({ data: 'Internal Server Error', status: 500 });
-    }
+      // Step 2: Delete related payments first (payments linked to the student)
+      await Payment.deleteMany({ user_id: student._id });
+
+      // Step 3: Delete associated payment plans
+      // If the payment plans are no longer needed, delete them as well
+      await Paymentplan.deleteMany({ _id: { $in: student.plan } });
+
+      // Step 4: Finally, delete the student document
+      await Student.findByIdAndDelete(id);
+
+      return res.status(200).json({
+          status: 200,
+          data: { message: 'Student and related records deleted successfully' }
+      });
+  } catch (error) {
+      console.error('Error Deleting Student and related records:', error);
+      return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+  }
 };
+
+
+// Cleanup orphaned payments and payment plans
+export const cleanupOrphanedPaymentsAndPlans = async (req: Request, res: Response) => {
+  try {
+      // Step 1: Find orphaned payments (payments with no associated student)
+      const orphanedPayments = await Payment.find({
+          user_id: { $nin: await Student.distinct('_id') } // Payments not referencing any existing student
+      });
+
+      // Step 2: Find orphaned payment plans (payment plans not referenced by any student)
+      const orphanedPaymentPlans = await Paymentplan.find({
+          _id: { $nin: await Student.distinct('plan') } // Payment plans not referenced by any student
+      });
+
+      // Step 3: Delete orphaned payments and orphaned payment plans
+      if (orphanedPayments.length > 0 || orphanedPaymentPlans.length > 0) {
+          // Delete orphaned payments
+          if (orphanedPayments.length > 0) {
+              await Payment.deleteMany({
+                  user_id: { $nin: await Student.distinct('_id') }
+              });
+          }
+
+          // Delete orphaned payment plans
+          if (orphanedPaymentPlans.length > 0) {
+              await Paymentplan.deleteMany({
+                  _id: { $nin: await Student.distinct('plan') }
+              });
+          }
+
+          return res.status(200).json({
+              status: 200,
+              data: { message: 'Orphaned payments and payment plans deleted successfully' }
+          });
+      } else {
+          return res.status(200).json({
+              status: 200,
+              data: { message: 'No orphaned payments or payment plans found' }
+          });
+      }
+  } catch (error) {
+      console.error('Error cleaning up orphaned payments and payment plans:', error);
+      return res.status(500).json({ data: 'Internal Server Error', status: 500 });
+  }
+};
+
+
 
 
 // ==================================================  END GAME ==================================================

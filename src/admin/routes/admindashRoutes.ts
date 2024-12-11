@@ -1,5 +1,5 @@
 import express from 'express';
-import { createCenter, editCenter, deleteCenter, getAllCenters, getCenterById, createManager, getAllManagers, deleteManager, getManagerById, editManager,  createCourse, editCourse, getAllCourses, getCourseById, deleteCourse, adminGetAllStaff, adminGetOneStaff, adminGetAllStudents, adminGetOneStudent, deleteStudent, getAllInvoices, getAllPayments, getPaymentById, getInvoiceById, getPaymentsByStudentId } from '../controllers/admindashController';
+import { createCenter, editCenter, deleteCenter, getAllCenters, getCenterById, createManager, getAllManagers, deleteManager, getManagerById, editManager,  createCourse, editCourse, getAllCourses, getCourseById, deleteCourse, adminGetAllStaff, adminGetOneStaff, adminGetAllStudents, adminGetOneStudent, deleteStudent, getAllInvoices, getAllPayments, getPaymentById, getInvoiceById, getPaymentsByStudentId, cleanupOrphanedPaymentsAndPlans } from '../controllers/admindashController';
 import verifyToken  from '../../middlewares/authMiddleware';
 const router = express.Router();
 
@@ -48,6 +48,9 @@ router.get("/student/payments", verifyToken, getAllPayments);
 router.get("/student/payment/:id", verifyToken, getPaymentById);
 router.get('/payments/student/:id', verifyToken, getPaymentsByStudentId);
 
+// orphaned clearance
+
+router.post('/cleanup-orphaned-payments-and-plans', verifyToken, cleanupOrphanedPaymentsAndPlans);
 
 
 export default router;
