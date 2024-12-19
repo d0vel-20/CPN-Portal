@@ -49,33 +49,33 @@ const app = express()
    
        
    
-   const feScript:string = `echo 'starting script'
-   cd ../cpnfrontend 
-   git pull origin main
-   npm i
-   pm2 stop cpnfrontend
-   rm -rf .next
-   npm run build
-   pm2 start cpnfrontend
-   echo 'ended script'`;
-       app.post('/api/webhook-frontend', async (req: any, res: any) => {
-           const child = spawn("bash", ["-c", feScript.replace(/\n/g, "&&")]);
+  //  const feScript:string = `echo 'starting script'
+  //  cd ../cpnfrontend 
+  //  git pull origin main
+  //  npm i
+  //  pm2 stop cpnfrontend
+  //  rm -rf .next
+  //  npm run build
+  //  pm2 start cpnfrontend
+  //  echo 'ended script'`;
+  //      app.post('/api/webhook-frontend', async (req: any, res: any) => {
+  //          const child = spawn("bash", ["-c", feScript.replace(/\n/g, "&&")]);
    
-           const prom = new Promise<boolean>((resolve, reject) => {
-             child.stdout.on("data", (data: any) => {
-               console.log(`stdout: ${data}`);
-             });
+  //          const prom = new Promise<boolean>((resolve, reject) => {
+  //            child.stdout.on("data", (data: any) => {
+  //              console.log(`stdout: ${data}`);
+  //            });
          
-             child.on("close", (code: any) => {
-               console.log(`child process exited with code ${code}`);
-               if (code == 0) resolve(true);
-               else resolve(false);
-             });
-           });
-           if (await prom) return res.json({ success: true }, { status: 200 });
+  //            child.on("close", (code: any) => {
+  //              console.log(`child process exited with code ${code}`);
+  //              if (code == 0) resolve(true);
+  //              else resolve(false);
+  //            });
+  //          });
+  //          if (await prom) return res.json({ success: true }, { status: 200 });
    
-           return res.json({ success: false }, { status: 500 });
-       })
+  //          return res.json({ success: false }, { status: 500 });
+  //      })
 
 
 
