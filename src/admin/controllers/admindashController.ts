@@ -1024,7 +1024,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "paymentPlanDetails"
                 }
             },
-            // { $unwind: { path: "$paymentPlanDetails", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: "$paymentPlanDetails", preserveNullAndEmptyArrays: true } },
             {
                 $lookup: {
                     from: "students",
@@ -1033,7 +1033,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "studentDetails"
                 }
             },
-            // { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
             {
                 $lookup: {
                     from: "centers",
@@ -1050,8 +1050,8 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "courseDetails"
                 }
             },
-            // { $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true } },
-            // { $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true } },
             { $project: {
                 _id: 1,
                 amount: 1,
