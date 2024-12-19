@@ -951,7 +951,6 @@ export const getAllInvoices = async (req: Request, res: Response) => {
   };
 
 
-  // get all payments
   export const getAllPayments = async (req: Request, res: Response) => {
     try {
         const user = await getUser(req);
@@ -989,14 +988,13 @@ export const getAllInvoices = async (req: Request, res: Response) => {
 
         // Search by student details
         if (q) {
-          match.$or = [
-              { "studentDetails.fullname": { $regex: q, $options: "i" } },
-              { "studentDetails.email": { $regex: q, $options: "i" } },
-              { "studentDetails.phone": { $regex: q, $options: "i" } },
-              { "studentDetails.student_id": { $regex: q, $options: "i" } }
-          ];
-      }
-
+            match.$or = [
+                { "studentDetails.fullname": { $regex: q, $options: "i" } },
+                { "studentDetails.email": { $regex: q, $options: "i" } },
+                { "studentDetails.phone": { $regex: q, $options: "i" } },
+                { "studentDetails.student_id": { $regex: q, $options: "i" } }
+            ];
+        }
 
         // Filter by centerId
         if (center) {
@@ -1069,7 +1067,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                 },
                 lastPaymentDate: "$paymentPlanDetails.last_payment_date",
                 nextPaymentDate: "$paymentPlanDetails.next_payment_date"
-            } },
+            }},
             { $skip: (Number(page) - 1) * Number(limit) },
             { $limit: Number(limit) }
         ];
