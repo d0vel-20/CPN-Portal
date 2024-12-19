@@ -829,19 +829,18 @@ export const deleteStudent = async (req: Request, res: Response) => {
 // Cleanup orphaned payments and payment plans
 export const cleanupOrphanedPaymentsAndPlans = async (req: Request, res: Response) => {
   try {
-      // Step 1: Find orphaned payments (payments with no associated student)
+      //  Find orphaned payments (payments with no associated student)
       const orphanedPayments = await Payment.find({
-          user_id: { $nin: await Student.distinct('_id') } // Payments not referencing any existing student
+          user_id: { $nin: await Student.distinct('_id') } 
       });
 
-      // Step 2: Find orphaned payment plans (payment plans not referenced by any student)
+      // Find orphaned payment plans (payment plans not referenced by any student)
       const orphanedPaymentPlans = await Paymentplan.find({
           _id: { $nin: await Student.distinct('plan') } // Payment plans not referenced by any student
       });
 
-      // Step 3: Delete orphaned payments and orphaned payment plans
+      //  Delete orphaned payments and orphaned payment plans
       if (orphanedPayments.length > 0 || orphanedPaymentPlans.length > 0) {
-          // Delete orphaned payments
           if (orphanedPayments.length > 0) {
               await Payment.deleteMany({
                   user_id: { $nin: await Student.distinct('_id') }
@@ -875,12 +874,12 @@ export const cleanupOrphanedPaymentsAndPlans = async (req: Request, res: Respons
 // Cleanup orphaned invoices (invoices not referencing any existing payment plan)
 export const cleanupOrphanedInvoices = async (req: Request, res: Response) => {
   try {
-      // Step 1: Find orphaned invoices (invoices not referencing any payment plan)
+      //  Find orphaned invoices (invoices not referencing any payment plan)
       const orphanedInvoices = await Invoice.find({
-          payment_plan_id: { $nin: await Paymentplan.distinct('_id') } // Invoices not referencing any existing payment plan
+          payment_plan_id: { $nin: await Paymentplan.distinct('_id') } 
       });
 
-      // Step 2: Delete orphaned invoices
+      //  Delete orphaned invoices
       if (orphanedInvoices.length > 0) {
           await Invoice.deleteMany({
               payment_plan_id: { $nin: await Paymentplan.distinct('_id') }
@@ -951,113 +950,168 @@ export const getAllInvoices = async (req: Request, res: Response) => {
     }
   };
 
+
   // get all payments
   export const getAllPayments = async (req: Request, res: Response) => {
     try {
-      const user = await getUser(req);
-      if (!user || !user.isAdmin) {
-        return res.status(401).json({ data: "Unauthorized", status: 401 });
-      }
-  
-      const { page = 1, limit = 20, userId, minAmount, maxAmount, studentSearch, centerId, courseSearch } = req.query;
-  
-      const query: any = {};
-  
-      // Filter by userId if provided
-      if (userId) {
-        query.user_id = userId;
-      }
-  
-      // Filter by amount range if provided
-      if (minAmount || maxAmount) {
-        query.amount = {};
-        if (minAmount) query.amount.$gte = Number(minAmount);
-        if (maxAmount) query.amount.$lte = Number(maxAmount);
-      }
-  
-      // Search by student details if studentSearch is provided
-      if (studentSearch && typeof studentSearch === "string") {
-        query["payment_plan_id.user_id"] = {
-          $or: [
-            { fullname: new RegExp(studentSearch, "i") },
-            { email: new RegExp(studentSearch, "i") },
-            { phone: new RegExp(studentSearch, "i") },
-            { student_id: new RegExp(studentSearch, "i") },
-          ],
+        const user = await getUser(req);
+        if (!user || !user.isAdmin) {
+            return res.status(401).json({ data: "Unauthorized", status: 401 });
+        }
+
+        const {
+            page = 1,
+            limit = 20,
+            userId,
+            minAmount,
+            maxAmount,
+            studentSearch,
+            centerId,
+            courseSearch
+        } = req.query;
+
+        const match: any = {};
+
+        // Filter by userId
+        if (userId) {
+            if (!mongoose.isValidObjectId(userId)) {
+                return res.status(400).json({ data: "Invalid user ID", status: 400 });
+            }
+            match["user_id"] = new mongoose.Types.ObjectId(userId as string);
+        }
+
+        // Filter by amount range
+        if (minAmount || maxAmount) {
+            match.amount = {};
+            if (minAmount) match.amount.$gte = Number(minAmount);
+            if (maxAmount) match.amount.$lte = Number(maxAmount);
+        }
+
+        // Search by student details
+        if (studentSearch) {
+            match["studentDetails"] = {
+                $or: [
+                    { fullname: { $regex: studentSearch, $options: "i" } },
+                    { email: { $regex: studentSearch, $options: "i" } },
+                    { phone: { $regex: studentSearch, $options: "i" } },
+                    { student_id: { $regex: studentSearch, $options: "i" } }
+                ]
+            };
+        }
+
+        // Filter by centerId
+        if (centerId) {
+            if (!mongoose.isValidObjectId(centerId)) {
+                return res.status(400).json({ data: "Invalid center ID", status: 400 });
+            }
+            match["studentDetails.center"] = new mongoose.Types.ObjectId(centerId as string);
+        }
+
+        // Filter by course
+        if (courseSearch) {
+            if (!mongoose.isValidObjectId(courseSearch)) {
+                return res.status(400).json({ data: "Invalid course ID", status: 400 });
+            }
+            match["courseDetails._id"] = new mongoose.Types.ObjectId(courseSearch as string);
+        }
+
+        const pipeline: any[] = [
+            { $match: match },
+            {
+                $lookup: {
+                    from: "paymentplans",
+                    localField: "payment_plan_id",
+                    foreignField: "_id",
+                    as: "paymentPlanDetails"
+                }
+            },
+            { $unwind: "$paymentPlanDetails" },
+            {
+                $lookup: {
+                    from: "students",
+                    localField: "paymentPlanDetails.user_id",
+                    foreignField: "_id",
+                    as: "studentDetails"
+                }
+            },
+            { $unwind: "$studentDetails" },
+            {
+                $lookup: {
+                    from: "centers",
+                    localField: "studentDetails.center",
+                    foreignField: "_id",
+                    as: "centerDetails"
+                }
+            },
+            {
+                $lookup: {
+                    from: "courses",
+                    localField: "paymentPlanDetails.course_id",
+                    foreignField: "_id",
+                    as: "courseDetails"
+                }
+            },
+            { $unwind: "$courseDetails" },
+            { $unwind: "$centerDetails" },
+            { $project: {
+                _id: 1,
+                amount: 1,
+                installments: "$paymentPlanDetails.installments",
+                student: {
+                    fullname: "$studentDetails.fullname",
+                    email: "$studentDetails.email",
+                    phone: "$studentDetails.phone",
+                    center: "$centerDetails.name"
+                },
+                course: {
+                    title: "$courseDetails.title",
+                    duration: "$courseDetails.duration",
+                    amount: "$courseDetails.amount"
+                },
+                lastPaymentDate: "$paymentPlanDetails.last_payment_date",
+                nextPaymentDate: "$paymentPlanDetails.next_payment_date"
+            } },
+            { $skip: (Number(page) - 1) * Number(limit) },
+            { $limit: Number(limit) }
+        ];
+
+        const totalDocuments = await Payment.countDocuments(match);
+        const totalPages = Math.ceil(totalDocuments / Number(limit));
+
+        const payments = await Payment.aggregate(pipeline);
+
+        const paginatedResponse = {
+            saved: [],
+            existingRecords: payments,
+            hasPreviousPage: Number(page) > 1,
+            previousPages: Number(page) - 1,
+            hasNextPage: Number(page) < totalPages,
+            nextPages: Number(page) + 1,
+            totalPages: totalPages,
+            totalDocuments: totalDocuments,
+            currentPage: Number(page)
         };
-      }
-  
-  
-      // Filter by centerId if provided
-      if (centerId) {
-        query["payment_plan_id.user_id.center"] = centerId;
-      }
-  
 
-          // Course filter
-    if (courseSearch) {
-        query["payment_plan_id.course_id"] = courseSearch;
-      }
-  
-      // Calculate total documents and total pages
-      const totalDocuments = await Payment.countDocuments(query);
-      const totalPages = Math.ceil(totalDocuments / Number(limit));
-  
-      // Fetch payments with pagination
-      const payments = await Payment.find(query)
-        .skip((Number(page) - 1) * Number(limit))
-        .limit(Number(limit))
-        .populate({
-          path: "payment_plan_id",
-          model: Paymentplan,
-          select: "amount installments estimate last_payment_date next_payment_date reg_date",
-          populate: [
-            {
-              path: "course_id",
-              model: Course,
-              select: "title duration amount",
-            },
-            {
-              path: "user_id",
-              model: Student,
-              select: "fullname email phone center student_id",
-              populate: [{
-                path: "center",
-                model: Center,
-                select: "name location code"
-              }]
-            },
-          ],
+        res.status(200).json({
+            status: 200,
+            data: paginatedResponse
         });
-  
-      // Construct the paginated response
-      const paginatedResponse = {
-        saved: [],
-        existingRecords: payments,
-        hasPreviousPage: Number(page) > 1,
-        previousPages: Number(page) - 1,
-        hasNextPage: Number(page) < totalPages,
-        nextPages: Number(page) + 1,
-        totalPages: totalPages,
-        totalDocuments: totalDocuments,
-        currentPage: Number(page),
-      };
-  
-      res.status(200).json({
-        status: 200,
-        data: paginatedResponse,
-      });
     } catch (error) {
-      console.error("Error fetching payments:", error);
-      res.status(500).json({
-        data: "Internal Server Error",
-        status: 500,
-        details: error,
-      });
+        console.error("Error fetching payments:", error);
+        res.status(500).json({
+            data: "Internal Server Error",
+            status: 500,
+            details: error
+        });
     }
-  };
+};
+
   
 
+
+
+
+  // Fetch single payment
   export const getPaymentById = async (req: Request, res: Response) => {
     const { id } = req.params;
   
