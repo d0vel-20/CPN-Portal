@@ -684,7 +684,9 @@ export const adminGetOneStudent = async (req: Request, res: Response) => {
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
 }
-// get all students
+
+
+// Get all students
 export const adminGetAllStudents = async (req: Request, res: Response) => {
     try {
         const user = await getUser(req);
@@ -694,50 +696,61 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
 
         const { page = 1, limit = 20, q, center, course } = req.query;
 
-        const query: any = {};
-
-        // General search (name, email, etc.)
+        const match: any = {};
+        // Search functionality
         if (q) {
-            query.$or = [
-                { name: { $regex: q, $options: 'i' } },
-                { email: { $regex: q, $options: 'i' } }  // assuming email is a field
-                // Add other fields here if necessary
+            match.$or = [
+                { fullname: { $regex: q, $options: 'i' } },
+                { email: { $regex: q, $options: 'i' } },
             ];
         }
 
-            // Center filter (only for admin users)
-            if (center) {
-                query.center = center;
-            }
+        // Center filter
+        if (center) {
+            match.center = new mongoose.Types.ObjectId(center as string);
+        }
+
+        const pipeline: any[] = [
+            { $match: match }, // Base match query for students
+            {
+                $lookup: {
+                    from: 'paymentplans', // Collection to join
+                    localField: 'plan',
+                    foreignField: '_id',
+                    as: 'planDetails',
+                },
+            },
+            {
+                $lookup: {
+                    from: 'courses', // Join the courses collection
+                    localField: 'planDetails.course_id',
+                    foreignField: '_id',
+                    as: 'courseDetails',
+                },
+            },
+        ];
 
         // Course filter
         if (course) {
-            query['Paymentplan.course_id'] = course;
+            pipeline.push({
+                $match: {
+                    'planDetails.course_id': new mongoose.Types.ObjectId(course as string),
+                },
+            });
         }
 
-        console.log('Query:', query);
+        // Pagination
+        const skip = (Number(page) - 1) * Number(limit);
+        pipeline.push(
+            { $skip: skip },
+            { $limit: Number(limit) }
+        );
 
-        const totalDocuments = await Student.countDocuments(query);
+        // Execute the aggregation pipeline
+        const students = await Student.aggregate(pipeline);
+
+        const totalDocuments = await Student.countDocuments(match); // Adjust this for complex filters if necessary
         const totalPages = Math.ceil(totalDocuments / Number(limit));
-
-        const students = await Student.find(query)
-            .populate('center')
-            .populate({
-                path: "plan",
-                model: Paymentplan,
-                // populate: {
-                // path: '_id', // Adjust based on your needs
-                select:
-                  "amount installments estimate last_payment_date next_payment_date reg_date",
-                populate: {
-                  path: "course_id",
-                  model: Course,
-                  select: "title duration amount",
-                },
-                // }
-              })
-            .limit(Number(limit))
-            .skip((Number(page) - 1) * Number(limit));
 
         const paginatedResponse: Paginated = {
             saved: [],
@@ -748,18 +761,19 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
             nextPages: Number(page) + 1,
             totalPages: totalPages,
             totalDocuments: totalDocuments,
-            currentPage: Number(page)
+            currentPage: Number(page),
         };
 
         return res.status(200).json({
             status: 200,
-            data: paginatedResponse
+            data: paginatedResponse,
         });
     } catch (error) {
         console.error('Error Fetching Students:', error);
         return res.status(500).json({ data: 'Internal Server Error', status: 500 });
     }
-}
+};
+
 
 // Delete Student with related records (Payments, Payment Plans, and Invoices)
 export const deleteStudent = async (req: Request, res: Response) => {
