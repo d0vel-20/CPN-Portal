@@ -51,7 +51,7 @@ const app = express()
    
    const feScript:string = `echo 'starting script'
    cd ../cpnfrontend 
-   git pull origin production
+   git pull origin main
    npm i
    pm2 stop cpnfrontend
    rm -rf .next
