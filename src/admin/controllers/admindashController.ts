@@ -708,11 +708,10 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         // Center filter
         if (center) {
             match.center = new mongoose.Types.ObjectId(center as string);
+        }else{
+          return res.status(400).json({ data: 'Center is required', status: 400 });
         }
-        if(!center){
-          return res.status(400).json({data: 'Center is not valid', status: 400})
-        }
-
+        
         const pipeline: any[] = [
             { $match: match }, // Base match query for students
             {
