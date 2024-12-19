@@ -660,8 +660,6 @@ export const adminGetOneStudent = async (req: Request, res: Response) => {
         .populate({
             path: "plan",
             model: Paymentplan,
-            // populate: {
-            // path: '_id', // Adjust based on your needs
             select:
               "amount installments estimate last_payment_date next_payment_date reg_date",
             populate: {
@@ -669,7 +667,6 @@ export const adminGetOneStudent = async (req: Request, res: Response) => {
               model: Course,
               select: "title duration amount",
             },
-            // }
           })
         if (!student) {
             return res.status(404).json({ data: 'Student Not Found', status: 404 });
@@ -706,17 +703,22 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         }
 
         // Center filter
-        if (center) {
-            match.center = new mongoose.Types.ObjectId(center as string);
-        }else{
-          return res.status(400).json({ data: 'Center is required', status: 400 });
+        if (!center) {
+            return res.status(400).json({ data: 'Center is required', status: 400 });
         }
+
+        if (!mongoose.isValidObjectId(center)) {
+          return res.status(400).json({ data: 'Invalid center ID', status: 400 });
+      }
+
+        match.center = new mongoose.Types.ObjectId(center as string);
+
         
         const pipeline: any[] = [
             { $match: match }, // Base match query for students
             {
                 $lookup: {
-                    from: 'paymentplans', // Collection to join
+                    from: 'paymentplans',
                     localField: 'plan',
                     foreignField: '_id',
                     as: 'planDetails',
@@ -732,7 +734,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
             },
             {
                 $lookup: {
-                    from: 'courses', // Join the courses collection
+                    from: 'courses',
                     localField: 'planDetails.course_id',
                     foreignField: '_id',
                     as: 'courseDetails',
@@ -795,29 +797,21 @@ export const deleteStudent = async (req: Request, res: Response) => {
           return res.status(401).json({ data: 'Unauthorized', status: 401 });
       }
 
-      // Step 1: Find the student and associated payments
       const student = await Student.findById(id);
       if (!student) {
           return res.status(404).json({ data: 'Student Not Found', status: 404 });
       }
 
-      // Step 2: Delete related payments first (payments linked to the student)
       await Payment.deleteMany({ user_id: student._id });
 
-      // Step 3: Delete associated payment plans
       await Paymentplan.deleteMany({ _id: { $in: student.plan } });
 
-      // Step 4: Delete invoices related to the payment plans of the student
-      // First, find the payment plans associated with the student
       const paymentPlans = await Paymentplan.find({ _id: { $in: student.plan } });
       
-      // Get the list of invoice IDs associated with those payment plans
       const paymentPlanIds = paymentPlans.map(plan => plan._id);
 
-      // Delete invoices associated with those payment plans
       await Invoice.deleteMany({ payment_plan_id: { $in: paymentPlanIds } });
 
-      // Step 5: Finally, delete the student document
       await Student.findByIdAndDelete(id);
 
       return res.status(200).json({
@@ -829,6 +823,7 @@ export const deleteStudent = async (req: Request, res: Response) => {
       return res.status(500).json({ data: 'Internal Server Error', status: 500 });
   }
 };
+
 
 
 // Cleanup orphaned payments and payment plans
