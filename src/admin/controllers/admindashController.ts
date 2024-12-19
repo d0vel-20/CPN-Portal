@@ -721,6 +721,14 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
                 },
             },
             {
+                $lookup:{
+                  from: 'centers',
+                  localField: 'center',
+                  foreignField: '_id',
+                  as: 'centerDetails',
+                }
+            },
+            {
                 $lookup: {
                     from: 'courses', // Join the courses collection
                     localField: 'planDetails.course_id',
