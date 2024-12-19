@@ -965,9 +965,9 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             userId,
             minAmount,
             maxAmount,
-            studentSearch,
-            centerId,
-            courseSearch
+            q,
+            center,
+            course
         } = req.query;
 
         const match: any = {};
@@ -988,31 +988,31 @@ export const getAllInvoices = async (req: Request, res: Response) => {
         }
 
         // Search by student details
-        if (studentSearch) {
+        if (q) {
             match["studentDetails"] = {
                 $or: [
-                    { fullname: { $regex: studentSearch, $options: "i" } },
-                    { email: { $regex: studentSearch, $options: "i" } },
-                    { phone: { $regex: studentSearch, $options: "i" } },
-                    { student_id: { $regex: studentSearch, $options: "i" } }
+                    { fullname: { $regex: q, $options: "i" } },
+                    { email: { $regex: q, $options: "i" } },
+                    { phone: { $regex: q, $options: "i" } },
+                    { student_id: { $regex: q, $options: "i" } }
                 ]
             };
         }
 
         // Filter by centerId
-        if (centerId) {
-            if (!mongoose.isValidObjectId(centerId)) {
+        if (center) {
+            if (!mongoose.isValidObjectId(center)) {
                 return res.status(400).json({ data: "Invalid center ID", status: 400 });
             }
-            match["studentDetails.center"] = new mongoose.Types.ObjectId(centerId as string);
+            match["studentDetails.center"] = new mongoose.Types.ObjectId(center as string);
         }
 
         // Filter by course
-        if (courseSearch) {
-            if (!mongoose.isValidObjectId(courseSearch)) {
+        if (course) {
+            if (!mongoose.isValidObjectId(course)) {
                 return res.status(400).json({ data: "Invalid course ID", status: 400 });
             }
-            match["courseDetails._id"] = new mongoose.Types.ObjectId(courseSearch as string);
+            match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
         }
 
         const pipeline: any[] = [
