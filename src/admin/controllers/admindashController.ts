@@ -709,6 +709,9 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         if (center) {
             match.center = new mongoose.Types.ObjectId(center as string);
         }
+        if(!center){
+          return res.status(400).json({data: 'Center is not valid', status: 400})
+        }
 
         const pipeline: any[] = [
             { $match: match }, // Base match query for students
@@ -757,7 +760,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         // Execute the aggregation pipeline
         const students = await Student.aggregate(pipeline);
 
-        const totalDocuments = await Student.countDocuments(match); // Adjust this for complex filters if necessary
+        const totalDocuments = await Student.countDocuments(match); 
         const totalPages = Math.ceil(totalDocuments / Number(limit));
 
         const paginatedResponse: Paginated = {
