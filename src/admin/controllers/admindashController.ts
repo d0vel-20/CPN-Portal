@@ -712,7 +712,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
 
         // Course filter
         if (course) {
-            query['plan.course_id'] = course;
+            query['Paymentplan.course_id'] = course;
         }
 
         console.log('Query:', query);
