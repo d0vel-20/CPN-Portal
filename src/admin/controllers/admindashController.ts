@@ -704,15 +704,8 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
 
         // Center filter
         if (!center) {
-            return res.status(400).json({ data: 'Center is required', status: 400 });
+            match.center = new mongoose.Types.ObjectId(center as string);
         }
-
-        if (!mongoose.isValidObjectId(center)) {
-          return res.status(400).json({ data: 'Invalid center ID', status: 400 });
-      }
-
-        match.center = new mongoose.Types.ObjectId(center as string);
-
         
         const pipeline: any[] = [
             { $match: match }, // Base match query for students
