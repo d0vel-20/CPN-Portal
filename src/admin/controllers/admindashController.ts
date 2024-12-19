@@ -722,7 +722,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
                   from: 'centers',
                   localField: 'center',
                   foreignField: '_id',
-                  as: 'center',
+                  as: 'centerDetails',
                 }
             },
             {
@@ -730,7 +730,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
                     from: 'courses',
                     localField: 'planDetails.course_id',
                     foreignField: '_id',
-                    as: 'course',
+                    as: 'courseDetails',
                 },
             },
         ];
