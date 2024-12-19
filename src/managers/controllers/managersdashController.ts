@@ -706,7 +706,6 @@ export const getAllPayments = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    
 
     // Extract pagination parameters from the request query with default values
     const { page = 1, limit = 20, center,userId, minAmount, maxAmount, studentSearch, courseSearch } = req.query;
