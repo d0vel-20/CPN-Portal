@@ -996,7 +996,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
               { "studentDetails.student_id": { $regex: q, $options: "i" } }
           ];
       }
-            
+
 
         // Filter by centerId
         if (center) {
@@ -1024,7 +1024,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "paymentPlanDetails"
                 }
             },
-            { $unwind: "$paymentPlanDetails" },
+            { $unwind: { path: "$paymentPlanDetails", preserveNullAndEmptyArrays: true } },
             {
                 $lookup: {
                     from: "students",
@@ -1033,7 +1033,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "studentDetails"
                 }
             },
-            { $unwind: "$studentDetails" },
+            { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
             {
                 $lookup: {
                     from: "centers",
@@ -1050,8 +1050,8 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "courseDetails"
                 }
             },
-            { $unwind: "$courseDetails" },
-            { $unwind: "$centerDetails" },
+            { $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true } },
+            { $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true } },
             { $project: {
                 _id: 1,
                 amount: 1,
