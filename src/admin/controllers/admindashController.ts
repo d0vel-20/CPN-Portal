@@ -989,13 +989,14 @@ export const getAllInvoices = async (req: Request, res: Response) => {
 
         // Search by student details
         if (q) {
-                match.$or = [
-                    { fullname: { $regex: q, $options: "i" } },
-                    { email: { $regex: q, $options: "i" } },
-                    { phone: { $regex: q, $options: "i" } },
-                    { student_id: { $regex: q, $options: "i" } }
-                ]
-        }
+          match.$or = [
+              { "studentDetails.fullname": { $regex: q, $options: "i" } },
+              { "studentDetails.email": { $regex: q, $options: "i" } },
+              { "studentDetails.phone": { $regex: q, $options: "i" } },
+              { "studentDetails.student_id": { $regex: q, $options: "i" } }
+          ];
+      }
+            
 
         // Filter by centerId
         if (center) {
