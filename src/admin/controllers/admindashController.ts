@@ -703,7 +703,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         }
 
         // Center filter
-        if (!center) {
+        if (center) {
             match.center = new mongoose.Types.ObjectId(center as string);
         }
         
