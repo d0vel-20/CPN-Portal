@@ -1057,8 +1057,8 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                         duration: "$courseDetails.duration",
                         amount: "$courseDetails.amount"
                     },
-                    lastPaymentDate: "$paymentPlanDetails.last_payment_date",
-                    nextPaymentDate: "$paymentPlanDetails.next_payment_date"
+                    lastPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.last_payment_date", 0] },
+                    nextPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.next_payment_date", 0] }
                 }
             },
             {
