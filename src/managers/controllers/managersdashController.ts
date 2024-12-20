@@ -698,7 +698,6 @@ export const addPayment = async (req: Request, res: Response) => {
   }
 };
 
-// get all payments
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
@@ -706,123 +705,122 @@ export const getAllPayments = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    const { page = 1, limit = 20, userId, q, course} = req.query;
-   
+    const { page = 1, limit = 20, userId, q, course } = req.query;
+    
+    const match: any = {};
 
-    const match: any = {center: user.user.center};
+    // Ensure that payments are filtered by the manager's center
+    match["studentDetails.center"] = user.user.center; // Filter by center for the manager
 
-
-    if(userId){
-      if(!mongoose.isValidObjectId(userId)){
-        return res.status(400).json({data: "Invalid User ID", status: 400});
+    // Handle userId search
+    if (userId) {
+      if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ data: "Invalid User ID", status: 400 });
       }
       match["user_id"] = new mongoose.Types.ObjectId(userId as string);
     }
 
-       // Search by student details
-        if (q) {
-          match.$or = [
-              { "studentDetails.fullname": { $regex: q, $options: "i" } },
-              { "studentDetails.email": { $regex: q, $options: "i" } },
-              { "studentDetails.phone": { $regex: q, $options: "i" } },
-              { "studentDetails.student_id": { $regex: q, $options: "i" } }
-          ];
+    // Search by student details
+    if (q) {
+      match.$or = [
+        { "studentDetails.fullname": { $regex: q, $options: "i" } },
+        { "studentDetails.email": { $regex: q, $options: "i" } },
+        { "studentDetails.phone": { $regex: q, $options: "i" } },
+        { "studentDetails.student_id": { $regex: q, $options: "i" } }
+      ];
+    }
+
+    // Filter by course
+    if (course) {
+      if (!mongoose.isValidObjectId(course)) {
+        return res.status(400).json({ data: "Invalid course ID", status: 400 });
       }
+      match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
+    }
 
-
-      // Filter by course
-      if (course) {
-          if (!mongoose.isValidObjectId(course)) {
-              return res.status(400).json({ data: "Invalid course ID", status: 400 });
-          }
-          match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
-      }
-
-
-      const pipeline: any[] = [
-        {
-            $lookup: {
-                from: "paymentplans",
-                localField: "payment_plan_id",
-                foreignField: "_id",
-                as: "paymentPlanDetails"
-            }
-        },
-        {
-            $lookup: {
-                from: "students",
-                localField: "user_id",
-                foreignField: "_id",
-                as: "studentDetails"
-            }
-        },
-        {
-            $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true }
-        },
-        {
-            $lookup: {
-                from: "centers",
-                localField: "studentDetails.center",
-                foreignField: "_id",
-                as: "centerDetails"
-            }
-        },
-        {
-            $lookup: {
-                from: "courses",
-                localField: "paymentPlanDetails.course_id",
-                foreignField: "_id",
-                as: "courseDetails"
-            }
-        },
-        {
-            $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true }
-        },
-        {
-            $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true }
-        },
-        {
-            $match: match
-        },
-        {
-            $project: {
-                _id: 1,
-                amount: 1,
-                installments: "$paymentPlanDetails.installments",
-                student: {
-                    fullname: "$studentDetails.fullname",
-                    email: "$studentDetails.email",
-                    phone: "$studentDetails.phone",
-                    center: "$centerDetails.name"
-                },
-                course: {
-                    title: "$courseDetails.title",
-                    duration: "$courseDetails.duration",
-                    amount: "$courseDetails.amount"
-                },
-                lastPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.last_payment_date", 0] },
-                nextPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.next_payment_date", 0] }
-            }
-        },
-        {
-            $skip: (Number(page) - 1) * Number(limit)
-        },
-        {
-            $limit: Number(limit)
+    const pipeline: any[] = [
+      {
+        $lookup: {
+          from: "paymentplans",
+          localField: "payment_plan_id",
+          foreignField: "_id",
+          as: "paymentPlanDetails"
         }
+      },
+      {
+        $lookup: {
+          from: "students",
+          localField: "user_id",
+          foreignField: "_id",
+          as: "studentDetails"
+        }
+      },
+      {
+        $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $lookup: {
+          from: "centers",
+          localField: "studentDetails.center",
+          foreignField: "_id",
+          as: "centerDetails"
+        }
+      },
+      {
+        $lookup: {
+          from: "courses",
+          localField: "paymentPlanDetails.course_id",
+          foreignField: "_id",
+          as: "courseDetails"
+        }
+      },
+      {
+        $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true }
+      },
+      {
+        $match: match // Apply the match object with center filter
+      },
+      {
+        $project: {
+          _id: 1,
+          amount: 1,
+          installments: "$paymentPlanDetails.installments",
+          student: {
+            fullname: "$studentDetails.fullname",
+            email: "$studentDetails.email",
+            phone: "$studentDetails.phone",
+            center: "$centerDetails.name"
+          },
+          course: {
+            title: "$courseDetails.title",
+            duration: "$courseDetails.duration",
+            amount: "$courseDetails.amount"
+          },
+          lastPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.last_payment_date", 0] },
+          nextPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.next_payment_date", 0] }
+        }
+      },
+      {
+        $skip: (Number(page) - 1) * Number(limit)
+      },
+      {
+        $limit: Number(limit)
+      }
     ];
 
     const totalDocuments = await Payment.aggregate([
-        { $lookup: { from: "students", localField: "user_id", foreignField: "_id", as: "studentDetails" } },
-        { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
-        { $match: match },
-        { $count: "total" }
+      { $lookup: { from: "students", localField: "user_id", foreignField: "_id", as: "studentDetails" } },
+      { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
+      { $match: match }, // Apply the same match filter
+      { $count: "total" }
     ]);
 
     const totalPages = Math.ceil((totalDocuments[0]?.total || 0) / Number(limit));
     const payments = await Payment.aggregate(pipeline);
 
-   
     // Construct the paginated response
     const paginatedResponse = {
       saved: [],
