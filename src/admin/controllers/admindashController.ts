@@ -955,8 +955,6 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             page = 1,
             limit = 20,
             userId,
-            minAmount,
-            maxAmount,
             q,
             center,
             course
@@ -972,13 +970,6 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             match["user_id"] = new mongoose.Types.ObjectId(userId as string);
         }
 
-        // Filter by amount range
-        if (minAmount || maxAmount) {
-            match.amount = {};
-            if (minAmount) match.amount.$gte = Number(minAmount);
-            if (maxAmount) match.amount.$lte = Number(maxAmount);
-        }
-
         // Search by student details
         if (q) {
             match.$or = [
@@ -989,7 +980,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             ];
         }
 
-        // Filter by centerId
+        // Filter by center
         if (center) {
             if (!mongoose.isValidObjectId(center)) {
                 return res.status(400).json({ data: "Invalid center ID", status: 400 });
@@ -1006,7 +997,6 @@ export const getAllInvoices = async (req: Request, res: Response) => {
         }
 
         const pipeline: any[] = [
-            { $match: match },
             {
                 $lookup: {
                     from: "paymentplans",
@@ -1015,7 +1005,6 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "paymentPlanDetails"
                 }
             },
-            { $unwind: { path: "$paymentPlanDetails", preserveNullAndEmptyArrays: true } },
             {
                 $lookup: {
                     from: "students",
@@ -1024,7 +1013,9 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "studentDetails"
                 }
             },
-            { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
+            {
+                $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true }
+            },
             {
                 $lookup: {
                     from: "centers",
@@ -1041,33 +1032,51 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                     as: "courseDetails"
                 }
             },
-            { $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true } },
-            { $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true } },
-            { $project: {
-                _id: 1,
-                amount: 1,
-                installments: "$paymentPlanDetails.installments",
-                student: {
-                    fullname: "$studentDetails.fullname",
-                    email: "$studentDetails.email",
-                    phone: "$studentDetails.phone",
-                    center: "$centerDetails.name"
-                },
-                course: {
-                    title: "$courseDetails.title",
-                    duration: "$courseDetails.duration",
-                    amount: "$courseDetails.amount"
-                },
-                lastPaymentDate: "$paymentPlanDetails.last_payment_date",
-                nextPaymentDate: "$paymentPlanDetails.next_payment_date"
-            }},
-            { $skip: (Number(page) - 1) * Number(limit) },
-            { $limit: Number(limit) }
+            {
+                $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true }
+            },
+            {
+                $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true }
+            },
+            {
+                $match: match
+            },
+            {
+                $project: {
+                    _id: 1,
+                    amount: 1,
+                    installments: "$paymentPlanDetails.installments",
+                    student: {
+                        fullname: "$studentDetails.fullname",
+                        email: "$studentDetails.email",
+                        phone: "$studentDetails.phone",
+                        center: "$centerDetails.name"
+                    },
+                    course: {
+                        title: "$courseDetails.title",
+                        duration: "$courseDetails.duration",
+                        amount: "$courseDetails.amount"
+                    },
+                    lastPaymentDate: "$paymentPlanDetails.last_payment_date",
+                    nextPaymentDate: "$paymentPlanDetails.next_payment_date"
+                }
+            },
+            {
+                $skip: (Number(page) - 1) * Number(limit)
+            },
+            {
+                $limit: Number(limit)
+            }
         ];
 
-        const totalDocuments = await Payment.countDocuments(match);
-        const totalPages = Math.ceil(totalDocuments / Number(limit));
+        const totalDocuments = await Payment.aggregate([
+            { $lookup: { from: "students", localField: "user_id", foreignField: "_id", as: "studentDetails" } },
+            { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
+            { $match: match },
+            { $count: "total" }
+        ]);
 
+        const totalPages = Math.ceil((totalDocuments[0]?.total || 0) / Number(limit));
         const payments = await Payment.aggregate(pipeline);
 
         const paginatedResponse = {
@@ -1078,7 +1087,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             hasNextPage: Number(page) < totalPages,
             nextPages: Number(page) + 1,
             totalPages: totalPages,
-            totalDocuments: totalDocuments,
+            totalDocuments: totalDocuments[0]?.total || 0,
             currentPage: Number(page)
         };
 
