@@ -706,121 +706,127 @@ export const getAllPayments = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
+    const { page = 1, limit = 20, userId, q, course} = req.query;
+   
 
-    // Extract pagination parameters from the request query with default values
-    const { page = 1, limit = 20, center,userId, minAmount, maxAmount, studentSearch, courseSearch } = req.query;
-    let _center:any;
-    if (user.isAdmin) {
-      if (center) {
-        _center = new mongoose.Types.ObjectId(center as string); // Ensure it's an ObjectId
+    const match: any = {};
+
+
+    if(userId){
+      if(!mongoose.isValidObjectId(userId)){
+        return res.status(400).json({data: "Invalid User ID", status: 400});
       }
-    } else {
-      _center = user.user.center; // Manager's center is assigned
+      match["user_id"] = new mongoose.Types.ObjectId(userId as string);
     }
 
-    const query: any = {};
-    
-    console.log({center});
-    
-    if (!_center || !mongoose.Types.ObjectId.isValid(_center as any)) {
-      return res.status(400).json({
-        message: "Invalid center ID provided",
-        status: 400,
-      });
-    }
-
-    const centerId = new mongoose.Types.ObjectId(_center as string);
-
-
-    if (userId) {
-      const userIdString = Array.isArray(userId) ? userId[0] : userId; // Handle arrays of query parameters
-      if (typeof userIdString === "string" && mongoose.Types.ObjectId.isValid(userIdString)) {
-        query.user_id = new mongoose.Types.ObjectId(userIdString);
-      } else {
-        return res.status(400).json({
-          message: "Invalid userId provided",
-          status: 400,
-        });
+       // Search by student details
+        if (q) {
+          match.$or = [
+              { "studentDetails.fullname": { $regex: q, $options: "i" } },
+              { "studentDetails.email": { $regex: q, $options: "i" } },
+              { "studentDetails.phone": { $regex: q, $options: "i" } },
+              { "studentDetails.student_id": { $regex: q, $options: "i" } }
+          ];
       }
-    }
 
-    // Filter by amount range if provided
-    if (minAmount || maxAmount) {
-      query.amount = {};
-      if (minAmount) query.amount.$gte = Number(minAmount);
-      if (maxAmount) query.amount.$lte = Number(maxAmount);
-    }
 
-        // search by student details if studentSearch is provided
-        if (studentSearch && typeof studentSearch === "string") {
-          query["payment_plan_id.user_id"] = {
-            $or: [
-              { fullname: new RegExp(studentSearch, "i") },
-              { email: new RegExp(studentSearch, "i") },
-              { phone: new RegExp(studentSearch, "i") },
-              { student_id: new RegExp(studentSearch, "i") },
-            ],
-          };
+      // Filter by course
+      if (course) {
+          if (!mongoose.isValidObjectId(course)) {
+              return res.status(400).json({ data: "Invalid course ID", status: 400 });
+          }
+          match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
+      }
+
+
+      const pipeline: any[] = [
+        {
+            $lookup: {
+                from: "paymentplans",
+                localField: "payment_plan_id",
+                foreignField: "_id",
+                as: "paymentPlanDetails"
+            }
+        },
+        {
+            $lookup: {
+                from: "students",
+                localField: "user_id",
+                foreignField: "_id",
+                as: "studentDetails"
+            }
+        },
+        {
+            $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true }
+        },
+        {
+            $lookup: {
+                from: "centers",
+                localField: "studentDetails.center",
+                foreignField: "_id",
+                as: "centerDetails"
+            }
+        },
+        {
+            $lookup: {
+                from: "courses",
+                localField: "paymentPlanDetails.course_id",
+                foreignField: "_id",
+                as: "courseDetails"
+            }
+        },
+        {
+            $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true }
+        },
+        {
+            $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true }
+        },
+        {
+            $match: match
+        },
+        {
+            $project: {
+                _id: 1,
+                amount: 1,
+                installments: "$paymentPlanDetails.installments",
+                student: {
+                    fullname: "$studentDetails.fullname",
+                    email: "$studentDetails.email",
+                    phone: "$studentDetails.phone",
+                    center: "$centerDetails.name"
+                },
+                course: {
+                    title: "$courseDetails.title",
+                    duration: "$courseDetails.duration",
+                    amount: "$courseDetails.amount"
+                },
+                lastPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.last_payment_date", 0] },
+                nextPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.next_payment_date", 0] }
+            }
+        },
+        {
+            $skip: (Number(page) - 1) * Number(limit)
+        },
+        {
+            $limit: Number(limit)
         }
+    ];
 
+    const totalDocuments = await Payment.aggregate([
+        { $lookup: { from: "students", localField: "user_id", foreignField: "_id", as: "studentDetails" } },
+        { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
+        { $match: match },
+        { $count: "total" }
+    ]);
 
-            // search by course if courseSearch is provided
-    if (courseSearch && typeof courseSearch === "string") {
-      query["payment_plan_id.course_id"] = {
-        $or: [
-          { title: new RegExp(courseSearch, "i") },
-          { duration: new RegExp(courseSearch, "i") },
-        ],
-      };
-    }
+    const totalPages = Math.ceil((totalDocuments[0]?.total || 0) / Number(limit));
+    const payments = await Payment.aggregate(pipeline);
 
-    // Calculate total documents and total pages
-    const totalDocuments = await Payment.countDocuments(query);
-    const totalPages = Math.ceil(totalDocuments / Number(limit));
-
-    // Fetch payments with pagination
-    const payments = await Payment.find(query)
-      .skip((Number(page) - 1) * Number(limit)) // Skip documents based on current page
-      .limit(Number(limit))
-       // Limit the number of documents per page
-       .populate({
-        path: "user_id", // Populate the `user_id` field
-        model: "Student",
-        match: { center: centerId }, // Apply filter to the populated documents
-        select: "fullname email phone center", // Fetch only relevant fields
-      })
-      .populate({
-        path: "payment_plan_id",
-        model: Paymentplan,
-        select:
-          "amount installments estimate last_payment_date next_payment_date reg_date",
-        populate: [
-          {
-            path: "course_id",
-            model: Course,
-            select: "title duration amount",
-          },
-          {
-            path: "user_id",
-            model: Student,
-            select: "fullname email phone center student_id",
-            populate:[{
-              path: "center",
-              model: Center,
-              select: "name location code"
-            }]
-          },
-        ],
-      });
-
-      const filteredPayments = payments.filter(
-        (payment) => payment.user_id !== null
-      );
-
+   
     // Construct the paginated response
     const paginatedResponse = {
       saved: [],
-      existingRecords: filteredPayments,
+      existingRecords: payments,
       hasPreviousPage: Number(page) > 1,
       previousPages: Number(page) - 1,
       hasNextPage: Number(page) < totalPages,
@@ -932,13 +938,6 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
       ],
     });
 
-    // if (payments.length === 0) {
-    //   return res.status(404).json({
-    //     data: "No payments found for the student",
-    //     status: 404,
-    //   });
-    // }
-
     res.status(200).json({
       data: payments,
       status: 200,
@@ -950,33 +949,6 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
     });
   }
 };
-
-
-async function sendEmail(to: string, subject: string, text: string) {
-  // Create a transporter object using the default SMTP transport
-  const transporter = nodemailer.createTransport({
-    service: 'Gmail', // You can use other services like Yahoo, Outlook, etc.
-    auth: {
-      user: 'your-email@gmail.com', // Replace with your email
-      pass: 'your-email-password', // Replace with your email password
-    },
-  });
-
-  // Setup email data
-  const mailOptions = {
-    from: 'your-email@gmail.com', // Sender address
-    to, // Manager's email address
-    subject, // Subject line
-    text, // Plain text body
-  };
-
-  // Send mail with defined transport object
-  await transporter.sendMail(mailOptions);
-}
-
-
-
-
 
 
 
@@ -1000,15 +972,6 @@ export async function getPlanBalance(req: Request, res: Response) {
     })
 
     const balance = Math.abs(toBePaid - paid);
-
-        // If there's a remaining balance, send an email to the manager
-        // if (balance > 0) {
-        //   const managerEmail = "nwanebij@gmail.com"; // Replace with the manager's email address
-        //   const emailSubject = "Remaining Payment Notification";
-        //   const emailText = `Dear Manager,\n\nThe student with plan ID ${id} has a remaining balance of ${balance} to be paid.\n\nBest regards,\nYour System`;
-    
-        //   await sendEmail(managerEmail, emailSubject, emailText);
-        // }
 
 
     return res.status(200).json({ data: `${balance}`, status: 200 });
