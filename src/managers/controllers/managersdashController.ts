@@ -709,7 +709,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
     const { page = 1, limit = 20, userId, q, course} = req.query;
    
 
-    const match: any = {};
+    const match: any = {center: user.user.center};
 
 
     if(userId){
