@@ -100,7 +100,6 @@ export const editStudent = async (req: Request, res: Response) => {
   }
 };
 
-// Get All Students
 export const getAllStudents = async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
@@ -116,7 +115,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
     if (q) {
       query.$or = [
         { fullname: { $regex: q, $options: "i" } },
-        { email: { $regex: q, $options: "i" } }, // assuming email is a field
+        { email: { $regex: q, $options: "i" } },
       ];
     }
 
@@ -130,11 +129,6 @@ export const getAllStudents = async (req: Request, res: Response) => {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
-    // Course filter
-    if (course) {
-      query["plan.course_id"] = course;
-    }
-
     const totalDocuments = await Student.countDocuments(query);
     const totalPages = Math.ceil(totalDocuments / Number(limit));
 
@@ -142,8 +136,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
       .populate({
         path: "plan",
         model: Paymentplan,
-        // populate: {
-        // path: '_id', // Adjust based on your needs
+        match: course ? { course_id: course } : {}, // Apply the course filter here
         select:
           "amount installments estimate last_payment_date next_payment_date reg_date",
         populate: {
@@ -151,14 +144,18 @@ export const getAllStudents = async (req: Request, res: Response) => {
           model: Course,
           select: "title duration amount",
         },
-        // }
       })
       .limit(Number(limit))
       .skip((Number(page) - 1) * Number(limit));
 
+    // Remove students whose plans don't match the course (if no populated plan, they are excluded)
+    const filteredStudents = course
+      ? students.filter((student) => student.plan && student.plan.length > 0)
+      : students;
+
     const paginatedResponse = {
       saved: [],
-      existingRecords: students,
+      existingRecords: filteredStudents,
       hasPreviousPage: Number(page) > 1,
       previousPages: Number(page) - 1,
       hasNextPage: Number(page) < totalPages,
@@ -177,6 +174,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
     return res.status(500).json({ data: "Internal Server Error", status: 500 });
   }
 };
+
 
 // Get Student by ID
 export const getStudentById = async (req: Request, res: Response) => {
