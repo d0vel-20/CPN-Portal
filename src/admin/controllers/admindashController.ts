@@ -772,6 +772,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
             plan: student.planDetails.map((plan: any) => ({
                 ...plan
             })),
+            course: student.courseDetails[0] || null,
         }));
 
         const paginatedResponse: Paginated = {
