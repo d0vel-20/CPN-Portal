@@ -757,9 +757,26 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
         const totalDocuments = await Student.countDocuments(match); 
         const totalPages = Math.ceil(totalDocuments / Number(limit));
 
+         // Transform response to match the Students type
+         const transformedStudents = students.map((student: any) => ({
+            _id: student._id,
+            createdAt: student.createdAt,
+            fullname: student.fullname,
+            email: student.email,
+            phone: student.phone,
+            center: student.centerDetails[0] || null,
+            student_id: student.student_id,
+            reg_date: student.reg_date,
+            course_id: student.course_id,
+            birth_date: student.birth_date,
+            plan: student.planDetails.map((plan: any) => ({
+                ...plan
+            })),
+        }));
+
         const paginatedResponse: Paginated = {
             saved: [],
-            existingRecords: students,
+            existingRecords: transformedStudents,
             hasPreviousPage: Number(page) > 1,
             previousPages: Number(page) - 1,
             hasNextPage: Number(page) < totalPages,

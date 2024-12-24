@@ -709,7 +709,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
     
     const match: any = {};
 
-    // Ensure that payments are filtered by the manager's center
+    
     match["studentDetails.center"] = user.user.center; // Filter by center for the manager
 
     // Handle userId search
