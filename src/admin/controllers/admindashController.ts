@@ -1060,6 +1060,9 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                 $match: match
             },
             {
+                $sort: {payment_date: -1}
+            },
+            {
                 $project: {
                     _id: 1,
                     createdAt: 1,
