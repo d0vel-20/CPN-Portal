@@ -698,6 +698,8 @@ export const addPayment = async (req: Request, res: Response) => {
   }
 };
 
+
+
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
     const user = await getUser(req);
@@ -706,10 +708,9 @@ export const getAllPayments = async (req: Request, res: Response) => {
     }
 
     const { page = 1, limit = 20, userId, q, course } = req.query;
-    
+
     const match: any = {};
 
-    
     match["studentDetails.center"] = user.user.center; // Filter by center for the manager
 
     // Handle userId search
@@ -784,15 +785,26 @@ export const getAllPayments = async (req: Request, res: Response) => {
         $match: match // Apply the match object with center filter
       },
       {
+        $sort: { payment_date: -1 }
+      },
+      {
         $project: {
           _id: 1,
+          createdAt: 1,
+          user_id: "$user_id",
           amount: 1,
-          installments: "$paymentPlanDetails.installments",
-          student: {
-            fullname: "$studentDetails.fullname",
-            email: "$studentDetails.email",
-            phone: "$studentDetails.phone",
-            center: "$centerDetails.name"
+          payment_date: 1,
+          payment_plan_id: {
+            _id: { $arrayElemAt: ["$paymentPlanDetails._id", 0] },
+            course_id: { $arrayElemAt: ["$paymentPlanDetails.course_id", 0] },
+            user_id: {
+              _id: "$studentDetails._id",
+              fullname: "$studentDetails.fullname",
+              email: "$studentDetails.email",
+              phone: "$studentDetails.phone",
+              center: "$centerDetails.name"
+            },
+            installments: { $arrayElemAt: ["$paymentPlanDetails.installments", 0] }
           },
           course: {
             title: "$courseDetails.title",
@@ -821,32 +833,47 @@ export const getAllPayments = async (req: Request, res: Response) => {
     const totalPages = Math.ceil((totalDocuments[0]?.total || 0) / Number(limit));
     const payments = await Payment.aggregate(pipeline);
 
-    // Construct the paginated response
+    // Transform response to match PaymentsDetailed and PaymentsDetailedPlus
+    const transformedPayments = payments.map((payment: any) => ({
+      _id: payment._id,
+      createdAt: payment.createdAt,
+      user_id: payment.user_id,
+      amount: payment.amount,
+      payment_date: payment.payment_date,
+      payment_plan_id: {
+        ...payment.payment_plan_id,
+        user_id: {
+          ...payment.payment_plan_id.user_id
+        }
+      }
+    }));
+
     const paginatedResponse = {
       saved: [],
-      existingRecords: payments,
+      existingRecords: transformedPayments,
       hasPreviousPage: Number(page) > 1,
       previousPages: Number(page) - 1,
       hasNextPage: Number(page) < totalPages,
       nextPages: Number(page) + 1,
       totalPages: totalPages,
-      totalDocuments: totalDocuments,
-      currentPage: Number(page),
+      totalDocuments: totalDocuments[0]?.total || 0,
+      currentPage: Number(page)
     };
 
     res.status(200).json({
       status: 200,
-      data: paginatedResponse,
+      data: paginatedResponse
     });
   } catch (error) {
     console.error("Error fetching payments:", error);
     res.status(500).json({
       data: "Internal Server Error",
       status: 500,
-      details: error,
+      details: error
     });
   }
 };
+
 
 
 // get single payment
