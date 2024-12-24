@@ -767,7 +767,7 @@ export const adminGetAllStudents = async (req: Request, res: Response) => {
             center: student.centerDetails[0] || null,
             student_id: student.student_id,
             reg_date: student.reg_date,
-            course_id: student.planDetails.course_id,
+            course_id: student.planDetails.length > 0 ? student.planDetails[0].course_id : null,
             birth_date: student.birth_date,
             plan: student.planDetails.map((plan: any) => ({
                 ...plan
