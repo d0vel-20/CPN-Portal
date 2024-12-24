@@ -1062,13 +1062,15 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             {
                 $project: {
                     _id: 1,
+                    createdAt: 1,
+                    user_id: "$studentDetails._id",
                     amount: 1,
-                    installments: "$paymentPlanDetails.installments",
-                    student: {
-                        fullname: "$studentDetails.fullname",
-                        email: "$studentDetails.email",
-                        phone: "$studentDetails.phone",
-                        center: "$centerDetails.name"
+                    payment_date: 1,
+                    payment_plan_id: {
+                        _id: { $arrayElemAt: ["$paymentPlanDetails._id", 0] },
+                        course_id: { $arrayElemAt: ["$paymentPlanDetails.course_id", 0] },
+                        user_id: "$studentDetails",
+                        installments: { $arrayElemAt: ["$paymentPlanDetails.installments", 0] }
                     },
                     course: {
                         title: "$courseDetails.title",
@@ -1097,9 +1099,27 @@ export const getAllInvoices = async (req: Request, res: Response) => {
         const totalPages = Math.ceil((totalDocuments[0]?.total || 0) / Number(limit));
         const payments = await Payment.aggregate(pipeline);
 
+        // Transform response to match PaymentsDetailed and PaymentsDetailedPlus
+        const transformedPayments = payments.map((payment: any) => ({
+            _id: payment._id,
+            createdAt: payment.createdAt,
+            user_id: payment.user_id,
+            amount: payment.amount,
+            payment_date: payment.payment_date,
+            payment_plan_id: {
+                ...payment.payment_plan_id,
+                user_id: {
+                    ...payment.payment_plan_id.user_id,
+                    fullname: payment.payment_plan_id.user_id?.fullname,
+                    email: payment.payment_plan_id.user_id?.email,
+                    phone: payment.payment_plan_id.user_id?.phone
+                }
+            }
+        }));
+
         const paginatedResponse = {
             saved: [],
-            existingRecords: payments,
+            existingRecords: transformedPayments,
             hasPreviousPage: Number(page) > 1,
             previousPages: Number(page) - 1,
             hasNextPage: Number(page) < totalPages,
@@ -1123,11 +1143,8 @@ export const getAllInvoices = async (req: Request, res: Response) => {
     }
 };
 
+
   
-
-
-
-
   // Fetch single payment
   export const getPaymentById = async (req: Request, res: Response) => {
     const { id } = req.params;
