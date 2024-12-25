@@ -881,7 +881,8 @@ export const getAllPayments = async (req: Request, res: Response) => {
         ...payment.payment_plan_id,
         user_id: {
           ...payment.payment_plan_id.user_id
-        }
+        },
+        course_id: payment.payment_plan_id.course_id
       }
     }));
 
