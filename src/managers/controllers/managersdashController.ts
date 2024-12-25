@@ -111,7 +111,7 @@ export const getAllStudents = async (req: Request, res: Response) => {
       const { page = 1, limit = 20, q, course } = req.query;
 
       const match: any = {};
-      match['centerDetails.center'] = user.user.center;
+      // match['centerDetails.center'] = user.user.center;
       // Search functionality
       if (q) {
           match.$or = [
