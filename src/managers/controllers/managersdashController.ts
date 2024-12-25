@@ -185,7 +185,9 @@ export const getAllStudents = async (req: Request, res: Response) => {
           course_id: student.planDetails.length > 0 ? student.planDetails[0].course_id : null,
           birth_date: student.birth_date,
           plan: student.planDetails.map((plan: any) => ({
-              ...plan
+              ...plan,
+              course_id: student.courseDetails[0] || null
+
               
           })),
           course: student.courseDetails[0] || null,
