@@ -100,78 +100,114 @@ export const editStudent = async (req: Request, res: Response) => {
   }
 };
 
-// Get All Students
+// Get all students
 export const getAllStudents = async (req: Request, res: Response) => {
   try {
-    const user = await getUser(req);
-    if (!user) {
-      return res.status(401).json({ data: "Unauthorized", status: 401 });
-    }
+      const user = await getUser(req);
+      if (!user || user.isAdmin) {
+          return res.status(401).json({ data: 'Unauthorized', status: 401 });
+      }
 
-    const { page = 1, limit = 20, q, center, course } = req.query;
+      const { page = 1, limit = 20, q, course } = req.query;
 
-    const query: any = {};
+      const match: any = {};
+      match['centerDetails.center'] = user.user.center;
+      // Search functionality
+      if (q) {
+          match.$or = [
+              { fullname: { $regex: q, $options: 'i' } },
+              { email: { $regex: q, $options: 'i' } },
+          ];
+      }
 
-    // General search (name, email, etc.)
-    if (q) {
-      query.$or = [
-        { fullname: { $regex: q, $options: "i" } },
-        { email: { $regex: q, $options: "i" } }, // assuming email is a field
+      
+      const pipeline: any[] = [
+          { $match: match }, // Base match query for students
+          {
+              $lookup: {
+                  from: 'paymentplans',
+                  localField: 'plan',
+                  foreignField: '_id',
+                  as: 'planDetails',
+              },
+          },
+          {
+              $lookup:{
+                from: 'centers',
+                localField: 'center',
+                foreignField: '_id',
+                as: 'centerDetails',
+              }
+          },
+          {
+              $lookup: {
+                  from: 'courses',
+                  localField: 'planDetails.course_id',
+                  foreignField: '_id',
+                  as: 'courseDetails',
+              },
+          },
       ];
-    }
 
-    // Center filter (only for admin users)
-    if (center && user.isAdmin) {
-      query.center = center;
-    } else if (!user.isAdmin) {
-      // If not admin, filter by user's center
-      query.center = user.user.center;
-    } else {
-      return res.status(401).json({ data: "Unauthorized", status: 401 });
-    }
+      // Course filter
+      if (course) {
+          pipeline.push({
+              $match: {
+                  'planDetails.course_id': new mongoose.Types.ObjectId(course as string),
+              },
+          });
+      }
 
-    // Course filter
-    if (course) {
-      query["plan.course_id"] = course;
-    }
+      // Pagination
+      const skip = (Number(page) - 1) * Number(limit);
+      pipeline.push(
+          { $skip: skip },
+          { $limit: Number(limit) }
+      );
 
-    const totalDocuments = await Student.countDocuments(query);
-    const totalPages = Math.ceil(totalDocuments / Number(limit));
+      // Execute the aggregation pipeline
+      const students = await Student.aggregate(pipeline);
 
-    const students = await Student.find(query)
-      .populate({
-        path: "plan",
-        model: Paymentplan,
-        select:
-          "amount installments estimate last_payment_date next_payment_date reg_date",
-        populate: {
-          path: "course_id",
-          model: Course,
-          select: "title duration amount",
-        },
-      })
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit));
+      const totalDocuments = await Student.countDocuments(match); 
+      const totalPages = Math.ceil(totalDocuments / Number(limit));
 
-    const paginatedResponse = {
-      saved: [],
-      existingRecords: students,
-      hasPreviousPage: Number(page) > 1,
-      previousPages: Number(page) - 1,
-      hasNextPage: Number(page) < totalPages,
-      nextPages: Number(page) + 1,
-      totalPages: totalPages,
-      totalDocuments: totalDocuments,
-      currentPage: Number(page),
-    };
+       // Transform response to match the Students type
+       const transformedStudents = students.map((student: any) => ({
+          _id: student._id,
+          createdAt: student.createdAt,
+          fullname: student.fullname,
+          email: student.email,
+          phone: student.phone,
+          center: student.centerDetails[0] || null,
+          student_id: student.student_id,
+          reg_date: student.reg_date,
+          course_id: student.planDetails.length > 0 ? student.planDetails[0].course_id : null,
+          birth_date: student.birth_date,
+          plan: student.planDetails.map((plan: any) => ({
+              ...plan
+          })),
+          course: student.courseDetails[0] || null,
+      }));
 
-    return res.status(200).json({
-      status: 200,
-      data: paginatedResponse,
-    });
+      const paginatedResponse: Paginated = {
+          saved: [],
+          existingRecords: transformedStudents,
+          hasPreviousPage: Number(page) > 1,
+          previousPages: Number(page) - 1,
+          hasNextPage: Number(page) < totalPages,
+          nextPages: Number(page) + 1,
+          totalPages: totalPages,
+          totalDocuments: totalDocuments,
+          currentPage: Number(page),
+      };
+
+      return res.status(200).json({
+          status: 200,
+          data: paginatedResponse,
+      });
   } catch (error) {
-    console.error("Error Fetching Students:", error);
-    return res.status(500).json({ data: "Internal Server Error", status: 500 });
+      console.error('Error Fetching Students:', error);
+      return res.status(500).json({ data: 'Internal Server Error', status: 500 });
   }
 };
 

@@ -134,3 +134,80 @@ export const getAllStudents = async (req: Request, res: Response) => {
     return res.status(500).json({ data: "Internal Server Error", status: 500 });
   }
 };
+
+
+
+// Get All Students
+export const getAllStudents = async (req: Request, res: Response) => {
+  try {
+    const user = await getUser(req);
+    if (!user) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+
+    const { page = 1, limit = 20, q, center, course } = req.query;
+
+    const query: any = {};
+
+    // General search (name, email, etc.)
+    if (q) {
+      query.$or = [
+        { fullname: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } }, // assuming email is a field
+      ];
+    }
+
+    // Center filter (only for admin users)
+    if (center && user.isAdmin) {
+      query.center = center;
+    } else if (!user.isAdmin) {
+      // If not admin, filter by user's center
+      query.center = user.user.center;
+    } else {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+
+    // Course filter
+    if (course) {
+      query["plan.course_id"] = course;
+    }
+
+    const totalDocuments = await Student.countDocuments(query);
+    const totalPages = Math.ceil(totalDocuments / Number(limit));
+
+    const students = await Student.find(query)
+      .populate({
+        path: "plan",
+        model: Paymentplan,
+        select:
+          "amount installments estimate last_payment_date next_payment_date reg_date",
+        populate: {
+          path: "course_id",
+          model: Course,
+          select: "title duration amount",
+        },
+      })
+      .limit(Number(limit))
+      .skip((Number(page) - 1) * Number(limit));
+
+    const paginatedResponse = {
+      saved: [],
+      existingRecords: students,
+      hasPreviousPage: Number(page) > 1,
+      previousPages: Number(page) - 1,
+      hasNextPage: Number(page) < totalPages,
+      nextPages: Number(page) + 1,
+      totalPages: totalPages,
+      totalDocuments: totalDocuments,
+      currentPage: Number(page),
+    };
+
+    return res.status(200).json({
+      status: 200,
+      data: paginatedResponse,
+    });
+  } catch (error) {
+    console.error("Error Fetching Students:", error);
+    return res.status(500).json({ data: "Internal Server Error", status: 500 });
+  }
+};
