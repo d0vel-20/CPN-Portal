@@ -147,6 +147,24 @@ export const getAllStudents = async (req: Request, res: Response) => {
                   as: 'courseDetails',
               },
           },
+          {
+            $addFields: {
+              "planDetails.courseDetails": {
+                $arrayElemAt: [
+                  {
+                    $filter: {
+                      input: "$courseDetails",
+                      as: "course",
+                      cond: {
+                        $eq: ["$$course._id", "$$this.course_id"],
+                      },
+                    },
+                  },
+                  0,
+                ],
+              },
+            },
+          },
       ];
 
       // Course filter
@@ -181,10 +199,12 @@ export const getAllStudents = async (req: Request, res: Response) => {
           center: student.centerDetails[0] || null,
           student_id: student.student_id,
           reg_date: student.reg_date,
-          course_id: student.courseDetails[0] || null,
+          course_id: student.planDetails.length > 0 ? student.planDetails[0].course_id : null,
           birth_date: student.birth_date,
           plan: student.planDetails.map((plan: any) => ({
-              ...plan
+              ...plan,
+              courseDetails: plan.courseDetails || null,
+              
           })),
           course: student.courseDetails[0] || null,
       }));
