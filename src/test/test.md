@@ -211,3 +211,58 @@ export const getAllStudents = async (req: Request, res: Response) => {
     return res.status(500).json({ data: "Internal Server Error", status: 500 });
   }
 };
+
+
+
+
+
+       const feScript: string = `
+       echo 'starting script'
+       cd ../cpnfrontend || exit 1
+       echo 'Pulling latest changes from git'
+       git pull origin main || exit 1
+       echo 'Installing dependencies'
+       npm install || exit 1
+       echo 'Stopping PM2 process'
+       pm2 stop cpnfrontend || exit 1
+       echo 'Building the project'
+       npm run build || exit 1
+       echo 'Starting PM2 process'
+       pm2 start cpnfrontend || exit 1
+       echo 'Script finished successfully'
+       `;
+       app.post('/api/webhook-frontend', async (req: any, res: any) => {
+        const child = spawn("bash", ["-c", feScript]);
+      
+        let output = '';
+        let errorOccurred = false;
+      
+        // Capture stdout
+        child.stdout.on("data", (data: Buffer) => {
+          console.log(`stdout: ${data.toString()}`);
+          output += data.toString();
+        });
+      
+        // Capture stderr
+        child.stderr.on("data", (data: Buffer) => {
+          console.error(`stderr: ${data.toString()}`);
+          output += data.toString();
+          errorOccurred = true;
+        });
+      
+        // Handle process exit
+        child.on("close", (code) => {
+          console.log(`child process exited with code ${code}`);
+          if (code === 0 && !errorOccurred) {
+            return res.status(200).json({ success: true, log: output });
+          } else {
+            return res.status(500).json({ success: false, log: output });
+          }
+        });
+      
+        // Handle unexpected errors
+        child.on("error", (err) => {
+          console.error(`Error occurred: ${err.message}`);
+          return res.status(500).json({ success: false, error: err.message });
+        });
+      });
