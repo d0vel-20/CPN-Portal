@@ -849,7 +849,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
       const transformedPayments = payments.map((payment: any) => ({
           _id: payment._id,
           createdAt: payment.createdAt,
-          user_id: payment.studentDetails[0] || null,
+          user_id: payment.studentDetails[0]?.fullname || null,
           amount: payment.amount,
           payment_date: payment.payment_date,
           course: payment.course,
