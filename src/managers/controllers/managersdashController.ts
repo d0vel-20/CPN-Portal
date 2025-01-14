@@ -754,7 +754,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
       } = req.query;
 
       const match: any = {};
-      match["student.center"] = user.user.center;
+      match["studentDetails.center"] = user.user.center;
 
       // Filter by userId
       if (userId) {
@@ -767,10 +767,10 @@ export const getAllPayments = async (req: Request, res: Response) => {
       // Search by student details
       if (q) {
           match.$or = [
-              { "student.fullname": { $regex: q, $options: "i" } },
-              { "student.email": { $regex: q, $options: "i" } },
-              { "student.phone": { $regex: q, $options: "i" } },
-              { "student.student_id": { $regex: q, $options: "i" } }
+              { "studentDetails.fullname": { $regex: q, $options: "i" } },
+              { "studentDetails.email": { $regex: q, $options: "i" } },
+              { "studentDetails.phone": { $regex: q, $options: "i" } },
+              { "studentDetails.student_id": { $regex: q, $options: "i" } }
           ];
       }
 
@@ -779,7 +779,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
           if (!mongoose.isValidObjectId(center)) {
               return res.status(400).json({ data: "Invalid center ID", status: 400 });
           }
-          match["student.center"] = new mongoose.Types.ObjectId(center as string);
+          match["studentDetails.center"] = new mongoose.Types.ObjectId(center as string);
       }
 
       
@@ -798,7 +798,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
                   from: "students",
                   localField: "user_id",
                   foreignField: "_id",
-                  as: "student"
+                  as: "studentDetails"
               }
           },
           {
@@ -849,7 +849,7 @@ export const getAllPayments = async (req: Request, res: Response) => {
       const transformedPayments = payments.map((payment: any) => ({
           _id: payment._id,
           createdAt: payment.createdAt,
-          user_id: payment.student[0]?.fullname || null,
+          user_id: payment.user_id,
           amount: payment.amount,
           payment_date: payment.payment_date,
           course: payment.course,
