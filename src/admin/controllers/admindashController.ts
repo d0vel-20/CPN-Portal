@@ -1272,5 +1272,9 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
   }
 };
 
+export const getOneManager = async(req: Request, res:Response) =>{
+
+}
+
   
  
