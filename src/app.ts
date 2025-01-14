@@ -75,7 +75,7 @@ const app = express()
            if (await prom) return res.json({ success: true }, { status: 200 });
    
            return res.json({ success: false }, { status: 500 });
-       })
+   })
 
 
 

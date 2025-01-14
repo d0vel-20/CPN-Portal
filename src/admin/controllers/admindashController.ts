@@ -1007,13 +1007,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             match["studentDetails.center"] = new mongoose.Types.ObjectId(center as string);
         }
 
-        // Filter by course
-        if (course) {
-            if (!mongoose.isValidObjectId(course)) {
-                return res.status(400).json({ data: "Invalid course ID", status: 400 });
-            }
-            match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
-        }
+        
 
         const pipeline: any[] = [
             {
@@ -1033,9 +1027,6 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                 }
             },
             {
-                $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true }
-            },
-            {
                 $lookup: {
                     from: "centers",
                     localField: "studentDetails.center",
@@ -1052,73 +1043,45 @@ export const getAllInvoices = async (req: Request, res: Response) => {
                 }
             },
             {
-                $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true }
-            },
-            {
-                $unwind: { path: "$centerDetails", preserveNullAndEmptyArrays: true }
-            },
-            {
                 $match: match
             },
             {
                 $sort: {payment_date: -1}
             },
-            {
-                $project: {
-                    _id: 1,
-                    createdAt: 1,
-                    user_id: "$studentDetails._id",
-                    amount: 1,
-                    payment_date: 1,
-                    payment_plan_id: {
-                        _id: { $arrayElemAt: ["$paymentPlanDetails._id", 0] },
-                        course_id: { $arrayElemAt: ["$paymentPlanDetails.course_id", 0] },
-                        user_id: "$studentDetails",
-                        installments: { $arrayElemAt: ["$paymentPlanDetails.installments", 0] }
-                    },
-                    course: {
-                        title: "$courseDetails.title",
-                        duration: "$courseDetails.duration",
-                        amount: "$courseDetails.amount"
-                    },
-                    lastPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.last_payment_date", 0] },
-                    nextPaymentDate: { $arrayElemAt: ["$paymentPlanDetails.next_payment_date", 0] }
-                }
-            },
-            {
-                $skip: (Number(page) - 1) * Number(limit)
-            },
-            {
-                $limit: Number(limit)
-            }
+
         ];
 
-        const totalDocuments = await Payment.aggregate([
-            { $lookup: { from: "students", localField: "user_id", foreignField: "_id", as: "studentDetails" } },
-            { $unwind: { path: "$studentDetails", preserveNullAndEmptyArrays: true } },
-            { $match: match },
-            { $count: "total" }
-        ]);
+        // Filter by course
+        if (course) {
+            if (!mongoose.isValidObjectId(course)) {
+                return res.status(400).json({ data: "Invalid course ID", status: 400 });
+            }
+            match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
+        };
 
-        const totalPages = Math.ceil((totalDocuments[0]?.total || 0) / Number(limit));
+        const skip = (Number(page) - 1) * Number(limit);
+        pipeline.push(
+            { $skip: skip },
+            { $limit: Number(limit) }
+        );
+
         const payments = await Payment.aggregate(pipeline);
+        const totalDocuments = await Payment.countDocuments(match);
+        const totalPages = Math.ceil(totalDocuments / Number(limit));
+        
 
         // Transform response to match PaymentsDetailed and PaymentsDetailedPlus
         const transformedPayments = payments.map((payment: any) => ({
             _id: payment._id,
             createdAt: payment.createdAt,
-            user_id: payment.user_id,
+            user_id: payment.studentDetails[0] || null,
             amount: payment.amount,
             payment_date: payment.payment_date,
-            payment_plan_id: {
-                ...payment.payment_plan_id,
-                user_id: {
-                    ...payment.payment_plan_id.user_id,
-                    fullname: payment.payment_plan_id.user_id?.fullname,
-                    email: payment.payment_plan_id.user_id?.email,
-                    phone: payment.payment_plan_id.user_id?.phone
-                }
-            }
+            course: payment.course,
+            payment_plan_id: payment.paymentPlanDetails.map(( payment_plan_id: any) =>({
+                ...payment_plan_id,
+                course_id: payment.courseDetails[0] || null,
+            }))
         }));
 
         const paginatedResponse = {
@@ -1129,7 +1092,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             hasNextPage: Number(page) < totalPages,
             nextPages: Number(page) + 1,
             totalPages: totalPages,
-            totalDocuments: totalDocuments[0]?.total || 0,
+            totalDocuments: totalDocuments,
             currentPage: Number(page)
         };
 

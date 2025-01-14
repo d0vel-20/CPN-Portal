@@ -1,5 +1,5 @@
 git add .
 
-git commit -m "web-hook implementation"
+git commit -m "restructured admin fetch payments"
 
 git push origin main
