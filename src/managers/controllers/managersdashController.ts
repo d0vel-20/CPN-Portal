@@ -1023,6 +1023,9 @@ export async function getPlanBalance(req: Request, res: Response) {
     });
   }
 }
+export const getAllManagments = async(req:Request, res:Response) =>{
+  
+}
 
 
 
