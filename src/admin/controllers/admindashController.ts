@@ -1081,6 +1081,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             payment_plan_id: payment.paymentPlanDetails.map(( payment_plan_id: any) =>({
                 ...payment_plan_id,
                 course_id: payment.courseDetails[0] || null,
+                user_id: payment.studentDetails[0] || null,
             }))
         }));
 
