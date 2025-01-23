@@ -69,8 +69,7 @@ const app = express()
       
         let output = '';
         let errorOccurred = false;
-      
-     
+
         child.stdout.on("data", (data: Buffer) => {
           console.log(`stdout: ${data.toString()}`);
           output += data.toString();

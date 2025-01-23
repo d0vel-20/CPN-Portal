@@ -8,6 +8,8 @@ export interface IStaff extends Document {
     fullname: string;
     email: string;
     phone: number;
+    image: string;
+    certificate: string[];
     center: mongoose.Schema.Types.ObjectId;
     courses: Types.Array<Types.ObjectId>;
     salary: number;
@@ -25,6 +27,13 @@ const StaffShema: Schema = new Schema({
     },
     phone:{
         type: Number,
+        required: true,
+    },
+    image:{
+        type: String,
+    },
+    certificate:{
+        type: [String],
         required: true,
     },
     center: {

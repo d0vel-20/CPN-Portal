@@ -19,9 +19,12 @@ import {
   getAllPayments,
   getPaymentById,
   getPaymentsByStudentId,
-  getPlanBalance
+  getPlanBalance,
+  uploadStaffImage,
+  uploadStaffCertificate
 } from "../../managers/controllers/managersdashController";
 import verifyToken from "../../middlewares/authMiddleware";
+import upload from "../../middlewares/multerConfig";
 
 const router = Router();
 
@@ -34,6 +37,8 @@ router.delete("/students/:id", verifyToken, deleteStudent);
 
 // Manager create Staff Routes
 router.post("/staff", verifyToken, createStaff);
+router.post("/staff/:id/upload-image", upload.single("image"), verifyToken, uploadStaffImage);
+router.post("/staff/:id/upload-certificate", upload.single("certificate"), verifyToken, uploadStaffCertificate);
 router.get("/staff", verifyToken, getAllStaff);
 router.get("/staff/:id", verifyToken, getStaffById);
 router.patch("/staff/:id", verifyToken, editStaff);

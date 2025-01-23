@@ -13,6 +13,9 @@ import cron from "node-cron";
 import Center from "../../models/centerModel";
 import nodemailer from 'nodemailer';
 import moment from "moment";
+import { uploadToCloudinary } from "../../config/cloudinary";
+import multer from 'multer';
+const upload = multer();
 
 // create student
 export const createStudent = async (req: Request, res: Response) => {
@@ -1023,9 +1026,62 @@ export async function getPlanBalance(req: Request, res: Response) {
     });
   }
 }
-export const getAllManagments = async(req:Request, res:Response) =>{
-  
+
+
+export const uploadStaffImage = async(req: Request, res:Response) =>{
+    try {
+      const { id } = req.params;
+      const user = await getUser(req);
+      if (!user || user.isAdmin) {
+        return res.status(401).json({ data: "Unauthorized", status: 401 });
+      }
+      if (!req.file) {
+        return res.status(400).json({ data: "No file uploaded", status: 400 });
+      }
+      const result = await uploadToCloudinary(req.file.buffer);
+      const staff = await Staff.findById(id);
+      if (!staff) {
+        return res.status(404).json({ data: "Staff not found", status: 404 });
+      }
+      staff.image = result.secure_url;
+      await staff.save();
+      res.status(200).json({ data: "Image uploaded successfully", status: 200 });
+      
+    } catch (error) {
+      console.error(error);
+    
+      res.status(500).json({
+        error: "Error uploading staff image",
+        details: error,
+      })
+    }
 }
-
-
+export const uploadStaffCertificate = async(req: Request, res:Response) =>{
+  try {
+    const { id } = req.params;
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+    if (!req.file) {
+      return res.status(400).json({ data: "No file uploaded", status: 400 });
+    }
+    const result = await uploadToCloudinary(req.file.buffer);
+    const staff = await Staff.findById(id);
+    if (!staff) {
+      return res.status(404).json({ data: "Staff not found", status: 404 });
+    }
+    staff.certificate.push(result.secure_url);
+    await staff.save();
+    res.status(200).json({ data: "Image uploaded successfully", status: 200 });
+    
+  } catch (error) {
+    console.error(error);
+  
+    res.status(500).json({
+      error: "Error uploading staff image",
+      details: error,
+    })
+  }
+}
 

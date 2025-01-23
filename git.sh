@@ -1,5 +1,5 @@
 git add .
 
-git commit -m "restructured admin fetch payments"
+git commit -m "added staff image and certificate upload"
 
 git push origin main

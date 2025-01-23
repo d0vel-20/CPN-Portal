@@ -9,3 +9,4 @@ export type Paginated<T = any> = {
     totalDocuments: number,
     currentPage: number
 };
+    
