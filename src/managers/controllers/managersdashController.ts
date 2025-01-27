@@ -1085,3 +1085,7 @@ export const uploadStaffCertificate = async(req: Request, res:Response) =>{
   }
 }
 
+export function fetch(){
+  
+}
+
