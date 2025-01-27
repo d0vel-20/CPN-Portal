@@ -1056,12 +1056,20 @@ export const uploadStaffImage = async(req: Request, res:Response) =>{
       })
     }
 }
-export const uploadStaffCertificate = async(req: Request, res:Response) =>{
+
+export const uploadStaffCertificate = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const { name } = req.body;
     const user = await getUser(req);
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
+    if (!name) {
+      return res.status(400).json({
+        data: "Name field is required",
+        status: 400,
+      });
     }
     if (!req.file) {
       return res.status(400).json({ data: "No file uploaded", status: 400 });
@@ -1071,21 +1079,29 @@ export const uploadStaffCertificate = async(req: Request, res:Response) =>{
     if (!staff) {
       return res.status(404).json({ data: "Staff not found", status: 404 });
     }
-    staff.certificate.push(result.secure_url);
+    staff.certificate = [
+      ...staff.certificate,
+      {
+        name: name,
+        url: result.secure_url,
+      },
+    ];
     await staff.save();
-    res.status(200).json({ data: "Image uploaded successfully", status: 200 });
-    
+    res.status(200).json({
+      data: "Certificate uploaded and saved successfully",
+      status: 200,
+      certificate: staff.certificate,
+    });
   } catch (error) {
     console.error(error);
-  
     res.status(500).json({
-      error: "Error uploading staff image",
+      error: "Error uploading staff certificate",
       details: error,
-    })
+    });
   }
-}
+};
 
-export function fetch(){
-  
-}
+
+
+
 

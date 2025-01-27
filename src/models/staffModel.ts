@@ -3,13 +3,19 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 
 // Define interface
+interface Certificate{
+    name: string,
+    url: string
+}
+
+
 export interface IStaff extends Document {
     _id: Types.ObjectId;
     fullname: string;
     email: string;
     phone: number;
     image: string;
-    certificate: string[];
+    certificate: Certificate[];
     center: mongoose.Schema.Types.ObjectId;
     courses: Types.Array<Types.ObjectId>;
     salary: number;
@@ -32,10 +38,18 @@ const StaffShema: Schema = new Schema({
     image:{
         type: String,
     },
-    certificate:{
-        type: [String],
-        required: true,
-    },
+    certificate:[{
+        // _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
+        name: {
+            type: String,
+            default: ''
+        },
+        url:{
+            type: String,
+            default: ''
+        }
+
+    }],
     center: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Center', // Referencing the Center model
