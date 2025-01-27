@@ -50,33 +50,30 @@ const app = express()
        
    
 // Frontend webhook
-const feScript:string = `echo 'starting script'
-   cd ../cpnfrontend 
-   git pull origin production
-   npm i
-   pm2 stop cpnfrontend
-   rm -rf .next
+const feScript:string = `echo 'starting frontend deployment'
+   cd /var/www/cpnfrontend 
+   git pull origin main
+   npm ci
    npm run build
-   pm2 start cpnfrontend
-   echo 'ended script'`;
-       app.post('/api/webhook-frontend', async (req: any, res: any) => {
-           const child = spawn("bash", ["-c", feScript.replace(/\n/g, "&&")]);
-   
-           const prom = new Promise<boolean>((resolve, reject) => {
-             child.stdout.on("data", (data: any) => {
-               console.log(`stdout: ${data}`);
-             });
-         
-             child.on("close", (code: any) => {
-               console.log(`child process exited with code ${code}`);
-               if (code == 0) resolve(true);
-               else resolve(false);
-             });
-           });
-           if (await prom) return res.json({ success: true }, { status: 200 });
-   
-           return res.json({ success: false }, { status: 500 });
-})
+   pm2 restart cpnfrontend
+   echo 'Frontend deployment completed.'`;
+    app.post('/api/webhook-frontend', async (req: any, res: any) => {
+      const child = spawn("bash", ["-c", feScript.replace(/\n/g, "&&")]);
+
+      const prom = new Promise<boolean>((resolve) => {
+          child.stdout.on("data", (data: any) => {
+              console.log(`stdout: ${data}`);
+          });
+
+          child.on("close", (code: any) => {
+              console.log(`child process exited with code ${code}`);
+              resolve(code === 0);
+          });
+      });
+
+      if (await prom) return res.status(200).json({ success: true });
+      return res.status(500).json({ success: false });
+  });
 
 
 
