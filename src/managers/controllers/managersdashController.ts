@@ -742,148 +742,143 @@ export const addPayment = async (req: Request, res: Response) => {
 
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
-    const user = await getUser(req);
-    if (!user || user.isAdmin) {
-      return res.status(401).json({ data: "Unauthorized", status: 401 });
-    }
-
-    const {
-      page = 1,
-      limit = 20,
-      userId,
-      q,
-      course
-    } = req.query;
-
-    const match: any = {};
-    match["studentDetails.center"] = user.user.center; // Ensure only payments from the manager's center are fetched
-
-    // Filter by userId
-    if (userId) {
-      if (!mongoose.isValidObjectId(userId)) {
-        return res.status(400).json({ data: "Invalid user ID", status: 400 });
+      const user = await getUser(req);
+      if (!user || user.isAdmin) {
+          return res.status(401).json({ data: "Unauthorized", status: 401 });
       }
-      match["user_id"] = new mongoose.Types.ObjectId(userId as string);
-    }
 
-    // Search by student details
-    if (q) {
-      match.$or = [
-        { "studentDetails.fullname": { $regex: q, $options: "i" } },
-        { "studentDetails.email": { $regex: q, $options: "i" } },
-        { "studentDetails.phone": { $regex: q, $options: "i" } },
-        { "studentDetails.student_id": { $regex: q, $options: "i" } }
+      const {
+          page = 1,
+          limit = 20,
+          userId,
+          q,
+          center,
+          course
+      } = req.query;
+
+      const match: any = {};
+      match["studentDetails.center"] = user.user.center;
+
+      // Filter by userId
+      if (userId) {
+          if (!mongoose.isValidObjectId(userId)) {
+              return res.status(400).json({ data: "Invalid user ID", status: 400 });
+          }
+          match["user_id"] = new mongoose.Types.ObjectId(userId as string);
+      }
+
+      // Search by student details
+      if (q) {
+          match.$or = [
+              { "studentDetails.fullname": { $regex: q, $options: "i" } },
+              { "studentDetails.email": { $regex: q, $options: "i" } },
+              { "studentDetails.phone": { $regex: q, $options: "i" } },
+              { "studentDetails.student_id": { $regex: q, $options: "i" } }
+          ];
+      }
+
+
+      
+
+      const pipeline: any[] = [
+          {
+              $lookup: {
+                  from: "paymentplans",
+                  localField: "payment_plan_id",
+                  foreignField: "_id",
+                  as: "paymentPlanDetails"
+              }
+          },
+          {
+              $lookup: {
+                  from: "students",
+                  localField: "user_id",
+                  foreignField: "_id",
+                  as: "studentDetails"
+              }
+          },
+          {
+              $lookup: {
+                  from: "centers",
+                  localField: "studentDetails.center",
+                  foreignField: "_id",
+                  as: "centerDetails"
+              }
+          },
+          {
+              $lookup: {
+                  from: "courses",
+                  localField: "paymentPlanDetails.course_id",
+                  foreignField: "_id",
+                  as: "courseDetails"
+              }
+          },
+          {
+              $match: match
+          },
+          {
+              $sort: {payment_date: -1}
+          },
+
       ];
-    }
 
-    // Filter by course
-    if (course) {
-      if (!mongoose.isValidObjectId(course)) {
-        return res.status(400).json({ data: "Invalid course ID", status: 400 });
-      }
-      match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
-    }
+      // Filter by course
+      if (course) {
+          if (!mongoose.isValidObjectId(course)) {
+              return res.status(400).json({ data: "Invalid course ID", status: 400 });
+          }
+          match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
+      };
 
-    const skip = (Number(page) - 1) * Number(limit);
+      const skip = (Number(page) - 1) * Number(limit);
+      pipeline.push(
+          { $skip: skip },
+          { $limit: Number(limit) }
+      );
 
-    // Aggregation pipeline with $facet for pagination and count
-    const pipeline: any[] = [
-      {
-        $lookup: {
-          from: "paymentplans",
-          localField: "payment_plan_id",
-          foreignField: "_id",
-          as: "paymentPlanDetails"
-        }
-      },
-      {
-        $lookup: {
-          from: "students",
-          localField: "user_id",
-          foreignField: "_id",
-          as: "studentDetails"
-        }
-      },
-      {
-        $lookup: {
-          from: "centers",
-          localField: "studentDetails.center",
-          foreignField: "_id",
-          as: "centerDetails"
-        }
-      },
-      {
-        $lookup: {
-          from: "courses",
-          localField: "paymentPlanDetails.course_id",
-          foreignField: "_id",
-          as: "courseDetails"
-        }
-      },
-      {
-        $match: match
-      },
-      {
-        $sort: { payment_date: -1 }
-      },
-      {
-        $facet: {
-          paginatedResults: [
-            { $skip: skip },
-            { $limit: Number(limit) }
-          ],
-          totalCount: [{ $count: "count" }]
-        }
-      }
-    ];
+      const payments = await Payment.aggregate(pipeline);
+      const totalDocuments = await Payment.countDocuments(match);
+      const totalPages = Math.ceil(totalDocuments / Number(limit));
+      
 
-    // Run the aggregation query
-    const result = await Payment.aggregate(pipeline);
+      // Transform response to match PaymentsDetailed and PaymentsDetailedPlus
+      const transformedPayments = payments.map((payment: any) => ({
+          _id: payment._id,
+          createdAt: payment.createdAt,
+          user_id: payment.user_id,
+          amount: payment.amount,
+          payment_date: payment.payment_date,
+          course: payment.course,
+          payment_plan_id: payment.paymentPlanDetails.map(( payment_plan_id: any) =>({
+              ...payment_plan_id,
+              course_id: payment.courseDetails[0] || null,
+              user_id: payment.studentDetails[0] || null,
+          }))
+      }));
 
-    // Extract paginated data and total count
-    const payments = result[0].paginatedResults;
-    const totalDocuments = result[0].totalCount.length > 0 ? result[0].totalCount[0].count : 0;
-    const totalPages = Math.ceil(totalDocuments / Number(limit));
+      const paginatedResponse = {
+          saved: [],
+          existingRecords: transformedPayments,
+          hasPreviousPage: Number(page) > 1,
+          previousPages: Number(page) - 1,
+          hasNextPage: Number(page) < totalPages,
+          nextPages: Number(page) + 1,
+          totalPages: totalPages,
+          totalDocuments: totalDocuments,
+          currentPage: Number(page)
+      };
 
-    // Transform response to match PaymentsDetailed and PaymentsDetailedPlus
-    const transformedPayments = payments.map((payment: any) => ({
-      _id: payment._id,
-      createdAt: payment.createdAt,
-      user_id: payment.user_id,
-      amount: payment.amount,
-      payment_date: payment.payment_date,
-      course: payment.course,
-      payment_plan_id: payment.paymentPlanDetails.map((payment_plan_id: any) => ({
-        ...payment_plan_id,
-        course_id: payment.courseDetails[0] || null,
-        user_id: payment.studentDetails[0] || null,
-      }))
-    }));
-
-    const paginatedResponse = {
-      saved: [],
-      existingRecords: transformedPayments,
-      hasPreviousPage: Number(page) > 1,
-      previousPages: Number(page) - 1,
-      hasNextPage: Number(page) < totalPages,
-      nextPages: Number(page) + 1,
-      totalPages: totalPages,
-      totalDocuments: totalDocuments,
-      currentPage: Number(page)
-    };
-
-    res.status(200).json({
-      status: 200,
-      data: paginatedResponse
-    });
-
+      res.status(200).json({
+          status: 200,
+          data: paginatedResponse
+      });
   } catch (error) {
-    console.error("Error fetching payments:", error);
-    res.status(500).json({
-      data: "Internal Server Error",
-      status: 500,
-      details: error
-    });
+      console.error("Error fetching payments:", error);
+      res.status(500).json({
+          data: "Internal Server Error",
+          status: 500,
+          details: error
+      });
   }
 };
 
