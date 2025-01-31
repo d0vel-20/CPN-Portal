@@ -742,87 +742,96 @@ export const addPayment = async (req: Request, res: Response) => {
 
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
+    // Authenticate user
+    const user = await getUser(req);
+    if (!user || user.isAdmin) {
+      console.log("❌ Unauthorized access");
+      return res.status(401).json({ data: "Unauthorized", status: 401 });
+    }
 
-      // Authenticate user
-      const user = await getUser(req);
-      if (!user || user.isAdmin) {
-          console.log("❌ Unauthorized access");
-          return res.status(401).json({ data: "Unauthorized", status: 401 });
-      }
+    const { page = 1, limit = 20, course, q } = req.query;
+    const skip = (Number(page) - 1) * Number(limit);
 
-      const { page = 1, limit = 20, course } = req.query;
-      const skip = (Number(page) - 1) * Number(limit);
+    if (course && !mongoose.isValidObjectId(course)) {
+      return res.status(400).json({ data: "Invalid course ID", status: 400 });
+    }
 
-      if (course && !mongoose.isValidObjectId(course)) {
-          return res.status(400).json({ data: "Invalid course ID", status: 400 });
-      }
+    // Fetch all user IDs that belong to the same center
+    let usersInCenter = await Student.find({ center: user.user.center }).select("_id").lean();
 
-      // Fetch all user IDs that belong to the same center
-      const usersInCenter = await Student.find({ center: user.user.center }).select("_id").lean();
-      const userIds = usersInCenter.map(u => u._id);
+   
+    if (q) {
+      usersInCenter = await Student.find({
+        center: user.user.center,
+        fullname: { $regex: q, $options: "i" }, 
+      }).select("_id").lean();
+    }
 
-      if (userIds.length === 0) {
-          return res.status(200).json({ status: 200, data: { existingRecords: [], totalDocuments: 0, totalPages: 0, currentPage: 1 } });
-      }
+    const userIds = usersInCenter.map(u => u._id);
 
-      let query = Payment.find({ user_id: { $in: userIds } })
-            .populate({
-              path: "payment_plan_id",
-              model: Paymentplan,
-              select:
-                "amount installments estimate last_payment_date next_payment_date reg_date",
-              populate: [
-                {
-                  path: "course_id",
-                  model: Course,
-                  select: "title duration amount",
-                },
-                {
-                  path: "user_id",
-                  model: Student,
-                  select: "fullname email phone center student_id",
-                  populate:[{
-                    path: "center",
-                    model: Center,
-                    select: "name location code"
-                  }]
-                },
-              ],
-            })
-          .sort({ payment_date: -1 })
-          .skip(skip)
-          .limit(Number(limit));
+    if (userIds.length === 0) {
+      return res.status(200).json({ status: 200, data: { existingRecords: [], totalDocuments: 0, totalPages: 0, currentPage: 1 } });
+    }
 
-      if (course) {
-          query = query.where("payment_plan_id.course_id").equals(new mongoose.Types.ObjectId(course as string));
-      }
+    let query = Payment.find({ user_id: { $in: userIds } })
+      .populate({
+        path: "payment_plan_id",
+        model: Paymentplan,
+        select:
+          "amount installments estimate last_payment_date next_payment_date reg_date",
+        populate: [
+          {
+            path: "course_id",
+            model: Course,
+            select: "title duration amount",
+          },
+          {
+            path: "user_id",
+            model: Student,
+            select: "fullname email phone center student_id",
+            populate: [{
+              path: "center",
+              model: Center,
+              select: "name location code"
+            }]
+          },
+        ],
+      })
+      .sort({ payment_date: -1 })
+      .skip(skip)
+      .limit(Number(limit));
 
-      const payments = await query.exec();
+    if (course) {
+      query = query.where("payment_plan_id.course_id").equals(new mongoose.Types.ObjectId(course as string));
+    }
 
-      if (payments.length === 0) {
-          console.log(" No payments found. Check if documents exist in DB.");
-      }
+    const payments = await query.exec();
 
-      const totalDocuments = await Payment.countDocuments({ user_id: { $in: userIds } });
-      const totalPages = Math.ceil(totalDocuments / Number(limit));
+    if (payments.length === 0) {
+      console.log(" No payments found. Check if documents exist in DB.");
+    }
 
-      const paginatedResponse = {
-          existingRecords: payments,
-          hasPreviousPage: Number(page) > 1,
-          previousPages: Number(page) - 1,
-          hasNextPage: Number(page) < totalPages,
-          nextPages: Number(page) + 1,
-          totalPages: totalPages,
-          totalDocuments: totalDocuments,
-          currentPage: Number(page),
-      };
-      res.status(200).json({ status: 200, data: paginatedResponse });
+    const totalDocuments = await Payment.countDocuments({ user_id: { $in: userIds } });
+    const totalPages = Math.ceil(totalDocuments / Number(limit));
+
+    const paginatedResponse = {
+      existingRecords: payments,
+      hasPreviousPage: Number(page) > 1,
+      previousPages: Number(page) - 1,
+      hasNextPage: Number(page) < totalPages,
+      nextPages: Number(page) + 1,
+      totalPages: totalPages,
+      totalDocuments: totalDocuments,
+      currentPage: Number(page),
+    };
+    res.status(200).json({ status: 200, data: paginatedResponse });
 
   } catch (error) {
-      console.error("❌ Error fetching payments:", error);
-      res.status(500).json({ data: "Internal Server Error", status: 500, details: error });
+    console.error("❌ Error fetching payments:", error);
+    res.status(500).json({ data: "Internal Server Error", status: 500, details: error });
   }
 };
+
 
 // get single payment
 export const getPaymentById = async (req: Request, res: Response) => {
