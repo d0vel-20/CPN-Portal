@@ -742,40 +742,87 @@ export const addPayment = async (req: Request, res: Response) => {
 
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
+    // Get the logged-in user
     const user = await getUser(req);
+    // Note: the original code returns unauthorized if user is not present or is admin.
     if (!user || user.isAdmin) {
       return res.status(401).json({ data: "Unauthorized", status: 401 });
     }
 
+    // Extract query parameters and set defaults
     const {
-      page = 1,
-      limit = 20,
+      page = "1",
+      limit = "20",
       userId,
       q,
       course
     } = req.query;
 
-    const match: any = {};
-    match["studentDetails.center"] = user.user.center; // Filter by the manager's center
+    const pageNum = Number(page);
+    const limitNum = Number(limit);
+    const skip = (pageNum - 1) * limitNum;
 
-    // Validate and filter by userId
+    // Build a match filter for Payment after joining necessary collections
+    // Note: some conditions have to be applied after we join "students"
+    const matchStage: any = {};
+
+    // If a userId is provided, validate and filter on it
     if (userId) {
-      if (!mongoose.isValidObjectId(userId)) {
+      if (!mongoose.isValidObjectId(String(userId))) {
         return res.status(400).json({ data: "Invalid user ID", status: 400 });
       }
-      match["user_id"] = new mongoose.Types.ObjectId(userId as string);
+      matchStage["user_id"] = new mongoose.Types.ObjectId(String(userId));
     }
 
-    // Validate and filter by course
+    // For searching student details (we join students below)
+    const studentSearchFilter: any = {};
+    if (q) {
+      // Searching over multiple student fields
+      studentSearchFilter["$or"] = [
+        { "student.fullname": { $regex: String(q), $options: "i" } },
+        { "student.email": { $regex: String(q), $options: "i" } },
+        { "student.phone": { $regex: String(q), $options: "i" } },
+        { "student.student_id": { $regex: String(q), $options: "i" } }
+      ];
+    }
+
+    // Build course filter if course parameter is provided. We’ll apply this after joining courses.
+    let courseFilter: any = {};
     if (course) {
-      if (!mongoose.isValidObjectId(course)) {
+      if (!mongoose.isValidObjectId(String(course))) {
         return res.status(400).json({ data: "Invalid course ID", status: 400 });
       }
-      match["paymentPlanDetails.course_id"] = new mongoose.Types.ObjectId(course as string);
+      courseFilter = { "course._id": new mongoose.Types.ObjectId(String(course)) };
     }
 
-    // Aggregation pipeline
+    /** Build the aggregation pipeline **/
     const pipeline: any[] = [
+      // 1. Join the student details (we assume Payment.user_id references a Student)
+      {
+        $lookup: {
+          from: "students", // collection name (make sure it matches your actual collection)
+          localField: "user_id",
+          foreignField: "_id",
+          as: "student"
+        }
+      },
+      // Unwind to work with a single student object
+      { $unwind: "$student" },
+
+      // 2. Make sure that the student's center matches the logged-in user's center.
+      {
+        $match: {
+          "student.center": new mongoose.Types.ObjectId(String(user.user.center))
+        }
+      },
+
+      // 3. (Optional) If search on student fields was provided, add them
+      ...(q ? [{ $match: studentSearchFilter }] : []),
+
+      // 4. Apply the userId filter if set (it can be applied here as well)
+      ...(matchStage.user_id ? [{ $match: { user_id: matchStage.user_id } }] : []),
+
+      // 5. Join the payment plan details.
       {
         $lookup: {
           from: "paymentplans",
@@ -784,120 +831,97 @@ export const getAllPayments = async (req: Request, res: Response) => {
           as: "paymentPlanDetails"
         }
       },
-      {
-        $lookup: {
-          from: "students",
-          localField: "user_id",
-          foreignField: "_id",
-          as: "studentDetails"
-        }
-      },
-      {
-        $unwind: "$studentDetails"
-      },
-      {
-        $lookup: {
-          from: "centers",
-          localField: "studentDetails.center",
-          foreignField: "_id",
-          as: "centerDetails"
-        }
-      },
+
+      // 6. Join courses.
+      // Since Paymentplan has a course_id, and we may have multiple payment plans per payment,
+      // we use $lookup with pipeline and then unwind to get a single course for filtering if needed.
       {
         $lookup: {
           from: "courses",
-          localField: "paymentPlanDetails.course_id",
-          foreignField: "_id",
-          as: "courseDetails"
+          let: { planCourseIds: "$paymentPlanDetails.course_id" },
+          pipeline: [
+            { $match: { $expr: { $in: ["$_id", "$$planCourseIds"] } } },
+            { $project: { title: 1, duration: 1, amount: 1 } }
+          ],
+          as: "courses"
         }
       },
-      {
-        $unwind: { path: "$courseDetails", preserveNullAndEmptyArrays: true }
-      },
-      {
-        $match: match
-      },
-      {
-        $set: {
-          studentName: "$studentDetails.fullname",
-          studentEmail: "$studentDetails.email",
-          studentPhone: "$studentDetails.phone",
-          studentId: "$studentDetails.student_id"
-        }
-      },
-      {
-        $match: {
-          $or: [
-            { studentName: { $regex: q || "", $options: "i" } },
-            { studentEmail: { $regex: q || "", $options: "i" } },
-            { studentPhone: { $regex: q || "", $options: "i" } },
-            { studentId: { $regex: q || "", $options: "i" } }
-          ]
-        }
-      },
-      {
-        $sort: { payment_date: -1 }
-      },
+
+      // Optionally filter by course if provided.
+      ...(course ? [{ $match: courseFilter }] : []),
+
+      // 7. Sort the payments by payment_date descending.
+      { $sort: { payment_date: -1 } },
+
+      // 8. Use a facet to get paginated data and total count in one round-trip.
       {
         $facet: {
-          paginatedResults: [
-            { $skip: (Number(page) - 1) * Number(limit) },
-            { $limit: Number(limit) }
+          data: [
+            { $skip: skip },
+            { $limit: limitNum }
           ],
-          totalCount: [{ $count: "count" }]
+          totalCount: [
+            { $count: "count" }
+          ]
         }
       }
     ];
 
-    // Execute aggregation query
-    const result = await Payment.aggregate(pipeline);
+    // Run the aggregation pipeline
+    const aggregatedResult = await Payment.aggregate(pipeline);
 
-    // Extract results
-    const payments = result[0].paginatedResults;
-    const totalDocuments = result[0].totalCount.length > 0 ? result[0].totalCount[0].count : 0;
-    const totalPages = Math.ceil(totalDocuments / Number(limit));
+    // aggregatedResult is an array with one element (the facet)
+    const facetResult = aggregatedResult[0] || {};
+    const payments = facetResult.data || [];
+    const totalCount = facetResult.totalCount[0] ? facetResult.totalCount[0].count : 0;
+    const totalPages = Math.ceil(totalCount / limitNum);
 
-    // Transform response format
+    // Transform payments if needed. For example, you might want to attach course details and student info in a particular format.
+    // Here we combine the first course found (if available) and student info.
     const transformedPayments = payments.map((payment: any) => ({
       _id: payment._id,
       createdAt: payment.createdAt,
       user_id: payment.user_id,
       amount: payment.amount,
       payment_date: payment.payment_date,
-      course: payment.courseDetails || null,
-      payment_plan_id: payment.paymentPlanDetails.map((plan: any) => ({
+      message: payment.message,
+      disclaimer: payment.disclaimer,
+      student: payment.student, // the joined student details
+      paymentPlanDetails: payment.paymentPlanDetails.map((plan: any) => ({
         ...plan,
-        course_id: payment.courseDetails || null,
-        user_id: payment.studentDetails || null,
+        // Optionally, attach the course details for each plan by matching with joined courses.
+        course: payment.courses.find((course: any) =>
+          course._id.toString() === plan.course_id.toString()
+        ) || null
       }))
     }));
 
+    // Build paginated response meta
     const paginatedResponse = {
-      saved: [],
       existingRecords: transformedPayments,
-      hasPreviousPage: Number(page) > 1,
-      previousPages: Number(page) - 1,
-      hasNextPage: Number(page) < totalPages,
-      nextPages: Number(page) + 1,
+      hasPreviousPage: pageNum > 1,
+      previousPage: pageNum > 1 ? pageNum - 1 : null,
+      hasNextPage: pageNum < totalPages,
+      nextPage: pageNum < totalPages ? pageNum + 1 : null,
       totalPages: totalPages,
-      totalDocuments: totalDocuments,
-      currentPage: Number(page)
+      totalDocuments: totalCount,
+      currentPage: pageNum
     };
 
-    res.status(200).json({
+    return res.status(200).json({
       status: 200,
       data: paginatedResponse
     });
-
   } catch (error) {
     console.error("Error fetching payments:", error);
-    res.status(500).json({
+    return res.status(500).json({
       data: "Internal Server Error",
       status: 500,
       details: error
     });
   }
 };
+
 
 
 // get single payment
