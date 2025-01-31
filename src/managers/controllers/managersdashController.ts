@@ -777,16 +777,29 @@ export const getAllPayments = async (req: Request, res: Response) => {
 
       // Step 2: Query Payments using these user IDs
       let query = Payment.find({ user_id: { $in: userIds } })
-          .populate({
-              path: "user_id",
-              select: "fullname email phone center",
-              populate: { path: "center", select: "name location" }
-          })
-          .populate({
+            .populate({
               path: "payment_plan_id",
-              select: "amount course_id",
-              populate: { path: "course_id", select: "name" }
-          })
+              model: Paymentplan,
+              select:
+                "amount installments estimate last_payment_date next_payment_date reg_date",
+              populate: [
+                {
+                  path: "course_id",
+                  model: Course,
+                  select: "title duration amount",
+                },
+                {
+                  path: "user_id",
+                  model: Student,
+                  select: "fullname email phone center student_id",
+                  populate:[{
+                    path: "center",
+                    model: Center,
+                    select: "name location code"
+                  }]
+                },
+              ],
+            })
           .sort({ payment_date: -1 })
           .skip(skip)
           .limit(Number(limit));
