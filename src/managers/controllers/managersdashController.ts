@@ -742,153 +742,94 @@ export const addPayment = async (req: Request, res: Response) => {
 
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
+      console.log("🔍 Request received:", req.query);
+
+      // Authenticate user
       const user = await getUser(req);
       if (!user || user.isAdmin) {
+          console.log("❌ Unauthorized access");
           return res.status(401).json({ data: "Unauthorized", status: 401 });
       }
 
-      const {
-          page = 1,
-          limit = 20,
-          userId,
-          q,
-          center,
-          course
-      } = req.query;
+      console.log("✅ User authenticated:", user.user.center);
 
-      const match: any = {};
-
-      // Filter by userId
-      if (userId) {
-          if (!mongoose.isValidObjectId(userId)) {
-              return res.status(400).json({ data: "Invalid user ID", status: 400 });
-          }
-          match["user_id"] = new mongoose.Types.ObjectId(userId as string);
-      }
-
-      // Search by student details
-      if (q) {
-          match.$or = [
-              { "studentDetails.fullname": { $regex: q, $options: "i" } },
-              { "studentDetails.email": { $regex: q, $options: "i" } },
-              { "studentDetails.phone": { $regex: q, $options: "i" } },
-              { "studentDetails.student_id": { $regex: q, $options: "i" } }
-          ];
-      }
-
-      // Filter by center
-      if (center) {
-          if (!mongoose.isValidObjectId(center)) {
-              return res.status(400).json({ data: "Invalid center ID", status: 400 });
-          }
-          match["studentDetails.center"] = new mongoose.Types.ObjectId(center as string);
-      }
-
-      
-
-      const pipeline: any[] = [
-          {
-              $lookup: {
-                  from: "paymentplans",
-                  localField: "payment_plan_id",
-                  foreignField: "_id",
-                  as: "paymentPlanDetails"
-              }
-          },
-          {
-              $lookup: {
-                  from: "students",
-                  localField: "user_id",
-                  foreignField: "_id",
-                  as: "studentDetails"
-              }
-          },
-          {
-              $lookup: {
-                  from: "centers",
-                  localField: "studentDetails.center",
-                  foreignField: "_id",
-                  as: "centerDetails"
-              }
-          },
-          {
-              $lookup: {
-                  from: "courses",
-                  localField: "paymentPlanDetails.course_id",
-                  foreignField: "_id",
-                  as: "courseDetails"
-              }
-          },
-          {
-              $match: match
-          },
-          {
-              $sort: {payment_date: -1}
-          },
-
-      ];
-
-      // Filter by course
-      if (course) {
-          if (!mongoose.isValidObjectId(course)) {
-              return res.status(400).json({ data: "Invalid course ID", status: 400 });
-          }
-          match["courseDetails._id"] = new mongoose.Types.ObjectId(course as string);
-      };
-
+      // Extract and validate query parameters
+      const { page = 1, limit = 20, course } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
-      pipeline.push(
-          { $skip: skip },
-          { $limit: Number(limit) }
-      );
 
-      const payments = await Payment.aggregate(pipeline);
-      const totalDocuments = await Payment.countDocuments(match);
+      if (course && !mongoose.isValidObjectId(course)) {
+          console.log("❌ Invalid Course ID:", course);
+          return res.status(400).json({ data: "Invalid course ID", status: 400 });
+      }
+
+      console.log("📌 Filtering payments for center:", user.user.center);
+
+      // Step 1: Fetch all user IDs that belong to the same center
+      const usersInCenter = await Student.find({ center: user.user.center }).select("_id").lean();
+      const userIds = usersInCenter.map(u => u._id);
+
+      if (userIds.length === 0) {
+          console.log("⚠️ No users found in this center.");
+          return res.status(200).json({ status: 200, data: { existingRecords: [], totalDocuments: 0, totalPages: 0, currentPage: 1 } });
+      }
+
+      console.log(`👥 Found ${userIds.length} users in this center.`);
+
+      // Step 2: Query Payments using these user IDs
+      let query = Payment.find({ user_id: { $in: userIds } })
+          .populate({
+              path: "user_id",
+              select: "fullname email phone center",
+              populate: { path: "center", select: "name location" }
+          })
+          .populate({
+              path: "payment_plan_id",
+              select: "amount course_id",
+              populate: { path: "course_id", select: "name" }
+          })
+          .sort({ payment_date: -1 })
+          .skip(skip)
+          .limit(Number(limit));
+
+      // Step 3: Filter by course if provided
+      if (course) {
+          console.log("📌 Filtering by Course ID:", course);
+          query = query.where("payment_plan_id.course_id").equals(new mongoose.Types.ObjectId(course as string));
+      }
+
+      console.log("🚀 Executing query...");
+      const payments = await query.exec();
+
+      console.log("📊 Payments found:", payments.length);
+
+      if (payments.length === 0) {
+          console.log("⚠️ No payments found. Check if documents exist in DB.");
+      }
+
+      // Step 4: Get total count of payments in the center
+      const totalDocuments = await Payment.countDocuments({ user_id: { $in: userIds } });
       const totalPages = Math.ceil(totalDocuments / Number(limit));
-      
 
-      // Transform response to match PaymentsDetailed and PaymentsDetailedPlus
-      const transformedPayments = payments.map((payment: any) => ({
-          _id: payment._id,
-          createdAt: payment.createdAt,
-          user_id: payment.user_id,
-          amount: payment.amount,
-          payment_date: payment.payment_date,
-          course: payment.course,
-          payment_plan_id: payment.paymentPlanDetails.map(( payment_plan_id: any) =>({
-              ...payment_plan_id,
-              course_id: payment.courseDetails[0] || null,
-              user_id: payment.studentDetails[0] || null,
-          }))
-      }));
-
+      // Construct paginated response
       const paginatedResponse = {
-          saved: [],
-          existingRecords: transformedPayments,
+          existingRecords: payments,
           hasPreviousPage: Number(page) > 1,
           previousPages: Number(page) - 1,
           hasNextPage: Number(page) < totalPages,
           nextPages: Number(page) + 1,
           totalPages: totalPages,
           totalDocuments: totalDocuments,
-          currentPage: Number(page)
+          currentPage: Number(page),
       };
 
-      res.status(200).json({
-          status: 200,
-          data: paginatedResponse
-      });
+      console.log("✅ Final Response:", paginatedResponse);
+      res.status(200).json({ status: 200, data: paginatedResponse });
+
   } catch (error) {
-      console.error("Error fetching payments:", error);
-      res.status(500).json({
-          data: "Internal Server Error",
-          status: 500,
-          details: error
-      });
+      console.error("❌ Error fetching payments:", error);
+      res.status(500).json({ data: "Internal Server Error", status: 500, details: error });
   }
 };
-
-
 
 // get single payment
 export const getPaymentById = async (req: Request, res: Response) => {
