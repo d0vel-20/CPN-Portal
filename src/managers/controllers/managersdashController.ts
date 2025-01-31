@@ -742,7 +742,6 @@ export const addPayment = async (req: Request, res: Response) => {
 
 export const getAllPayments = async (req: Request, res: Response) => {
   try {
-      console.log("🔍 Request received:", req.query);
 
       // Authenticate user
       const user = await getUser(req);
@@ -751,31 +750,21 @@ export const getAllPayments = async (req: Request, res: Response) => {
           return res.status(401).json({ data: "Unauthorized", status: 401 });
       }
 
-      console.log("✅ User authenticated:", user.user.center);
-
-      // Extract and validate query parameters
       const { page = 1, limit = 20, course } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
 
       if (course && !mongoose.isValidObjectId(course)) {
-          console.log("❌ Invalid Course ID:", course);
           return res.status(400).json({ data: "Invalid course ID", status: 400 });
       }
 
-      console.log("📌 Filtering payments for center:", user.user.center);
-
-      // Step 1: Fetch all user IDs that belong to the same center
+      // Fetch all user IDs that belong to the same center
       const usersInCenter = await Student.find({ center: user.user.center }).select("_id").lean();
       const userIds = usersInCenter.map(u => u._id);
 
       if (userIds.length === 0) {
-          console.log("⚠️ No users found in this center.");
           return res.status(200).json({ status: 200, data: { existingRecords: [], totalDocuments: 0, totalPages: 0, currentPage: 1 } });
       }
 
-      console.log(`👥 Found ${userIds.length} users in this center.`);
-
-      // Step 2: Query Payments using these user IDs
       let query = Payment.find({ user_id: { $in: userIds } })
             .populate({
               path: "payment_plan_id",
@@ -804,26 +793,19 @@ export const getAllPayments = async (req: Request, res: Response) => {
           .skip(skip)
           .limit(Number(limit));
 
-      // Step 3: Filter by course if provided
       if (course) {
-          console.log("📌 Filtering by Course ID:", course);
           query = query.where("payment_plan_id.course_id").equals(new mongoose.Types.ObjectId(course as string));
       }
 
-      console.log("🚀 Executing query...");
       const payments = await query.exec();
 
-      console.log("📊 Payments found:", payments.length);
-
       if (payments.length === 0) {
-          console.log("⚠️ No payments found. Check if documents exist in DB.");
+          console.log(" No payments found. Check if documents exist in DB.");
       }
 
-      // Step 4: Get total count of payments in the center
       const totalDocuments = await Payment.countDocuments({ user_id: { $in: userIds } });
       const totalPages = Math.ceil(totalDocuments / Number(limit));
 
-      // Construct paginated response
       const paginatedResponse = {
           existingRecords: payments,
           hasPreviousPage: Number(page) > 1,
@@ -834,8 +816,6 @@ export const getAllPayments = async (req: Request, res: Response) => {
           totalDocuments: totalDocuments,
           currentPage: Number(page),
       };
-
-      console.log("✅ Final Response:", paginatedResponse);
       res.status(200).json({ status: 200, data: paginatedResponse });
 
   } catch (error) {
