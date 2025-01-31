@@ -884,10 +884,8 @@ export const getAllPayments = async (req: Request, res: Response) => {
       user_id: payment.user_id,
       amount: payment.amount,
       payment_date: payment.payment_date,
-      message: payment.message,
-      disclaimer: payment.disclaimer,
-      student: payment.student, // the joined student details
-      paymentPlanDetails: payment.paymentPlanDetails.map((plan: any) => ({
+      course: payment.course,
+      payment_plan_id: payment.paymentPlanDetails.map((plan: any) => ({
         ...plan,
         // Optionally, attach the course details for each plan by matching with joined courses.
         course: payment.courses.find((course: any) =>
