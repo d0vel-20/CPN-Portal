@@ -53,7 +53,7 @@ const app = express()
 const feScript:string = `echo 'starting frontend deployment'
    cd /var/www/cpnfrontend 
    git pull origin main
-   npm ci
+   npm install
    npm run build
    pm2 restart cpnfrontend
    echo 'Frontend deployment completed.'`;
