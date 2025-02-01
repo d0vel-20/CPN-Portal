@@ -802,7 +802,9 @@ export const getAllPayments = async (req: Request, res: Response) => {
       .limit(Number(limit));
 
       if (course) {
-        query = query.where("payment_plan_id").elemMatch({ course_id: new mongoose.Types.ObjectId(course as string) });
+        query = query.where("payment_plan_id").in(
+          await Paymentplan.find({ course_id: course }).distinct("_id")
+        );
       }
 
     const payments = await query.exec();
