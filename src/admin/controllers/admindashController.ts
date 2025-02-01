@@ -1023,9 +1023,11 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             .skip(skip)
             .limit(Number(limit));
   
-        if (course) {
-            query = query.where("payment_plan_id.course_id").equals(new mongoose.Types.ObjectId(course as string));
-        }
+            if (course) {
+                query = query.where("payment_plan_id").in(
+                  await Paymentplan.find({ course_id: course }).distinct("_id")
+                );
+              }
   
         const payments = await query.exec();
   
