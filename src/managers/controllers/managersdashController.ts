@@ -15,6 +15,7 @@ import nodemailer from 'nodemailer';
 import moment from "moment";
 import { uploadToCloudinary } from "../../config/cloudinary";
 import multer from 'multer';
+import Report from "../../models/reportModel";
 const upload = multer();
 
 // create student
@@ -1026,6 +1027,7 @@ export const uploadStaffCertificate = async (req: Request, res: Response) => {
     staff.certificate = [
       ...staff.certificate,
       {
+        _id: new mongoose.Types.ObjectId(),
         name: name,
         url: result.secure_url,
       },
@@ -1045,6 +1047,84 @@ export const uploadStaffCertificate = async (req: Request, res: Response) => {
   }
 };
 
+
+export const deleteStaffCertificate = async (req: Request, res: Response) => {
+  try {
+      const { id, certificateId } = req.params;
+      const user = await getUser(req);
+
+      if (!user || user.isAdmin) {
+          return res.status(401).json({ data: "Unauthorized", status: 401 });
+      }
+
+      const staff = await Staff.findById(id);
+      if (!staff) {
+          return res.status(404).json({ data: "Staff not found", status: 404 });
+      }
+
+      staff.certificate = staff.certificate.filter(cert => cert._id.toString() !== certificateId);
+      await staff.save();
+
+      res.status(200).json({
+          data: "Certificate deleted successfully",
+          status: 200,
+          certificate: staff.certificate,
+      });
+  } catch (error) {
+      console.error("Error deleting staff certificate:", error);
+      res.status(500).json({
+          error: "Error deleting staff certificate",
+          details: error,
+      });
+  }
+};
+
+// create reports
+export const createReport = async (req: Request, res: Response) => {
+  const { title, description, date, reportType, enquiries, totalPayments, summary } = req.body;
+
+  if (!title || !description || !date || !reportType || !enquiries || !totalPayments || !summary) {
+      return res.status(400).json({ data: "All fields are required", status: 400 });
+  }
+
+  if (!['daily', 'weekly', 'monthly'].includes(reportType)) {
+      return res.status(400).json({ data: "Invalid report type", status: 400 });
+  }
+
+  try {
+      const user = await getUser(req);
+      if (!user || user.isAdmin) {
+          return res.status(401).json({ data: "Unauthorized", status: 401 });
+      }
+
+      const center = user.user.center;
+
+      const newReport = new Report({
+          title,
+          description,
+          date,
+          center,
+          reportType,
+          enquiries,
+          totalPayments,
+          summary,
+          createdBy: user.user._id,
+      });
+
+      await newReport.save();
+
+      return res.status(201).json({
+          status: 201,
+          data: {
+              newReport,
+              message: "Report Created Successfully",
+          },
+      });
+  } catch (error) {
+      console.error("Error Creating Report:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 
 

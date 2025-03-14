@@ -21,7 +21,9 @@ import {
   getPaymentsByStudentId,
   getPlanBalance,
   uploadStaffImage,
-  uploadStaffCertificate
+  uploadStaffCertificate,
+  deleteStaffCertificate,
+  createReport
 } from "../../managers/controllers/managersdashController";
 import verifyToken from "../../middlewares/authMiddleware";
 import upload from "../../middlewares/multerConfig";
@@ -39,6 +41,7 @@ router.delete("/students/:id", verifyToken, deleteStudent);
 router.post("/staff", verifyToken, createStaff);
 router.post("/staff/:id/upload-image", upload.single("image"), verifyToken, uploadStaffImage);
 router.post("/staff/:id/upload-certificate", upload.single("certificate"), verifyToken, uploadStaffCertificate);
+router.delete("/staff/:id/certificate/:certificateId", deleteStaffCertificate);
 router.get("/staff", verifyToken, getAllStaff);
 router.get("/staff/:id", verifyToken, getStaffById);
 router.patch("/staff/:id", verifyToken, editStaff);
@@ -54,11 +57,13 @@ router.get("/plan/invoice/:id", verifyToken, getInvoiceById);
 router.delete("/plan/invoice/:id", verifyToken, deleteInvoice);
 
 // manager add payment
-
 router.post("/students/:id/payment", verifyToken, addPayment);
 router.get("/student/payments", verifyToken, getAllPayments);
 router.get("/student/payment/:id", verifyToken, getPaymentById);
 router.get('/payments/student/:id', verifyToken, getPaymentsByStudentId);
 router.get('/payments/balance/:id', verifyToken, getPlanBalance);
 
+
+// manage add report
+router.post("/report", verifyToken, createReport)
 export default router;

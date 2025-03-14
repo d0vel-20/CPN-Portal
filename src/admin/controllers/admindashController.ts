@@ -972,7 +972,7 @@ export const getAllInvoices = async (req: Request, res: Response) => {
             return res.status(401).json({ data: "Unauthorized", status: 401 });
         }
   
-        const { page = 1, limit = 20, course, center, q } = req.query;
+        const { page = 1, limit = 20, course, center, q, date } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
   
         if (course && !mongoose.isValidObjectId(course)) {
@@ -980,6 +980,20 @@ export const getAllInvoices = async (req: Request, res: Response) => {
         }
   
         let queryConditions: any = {};
+
+        // Validate and apply date filter
+        if (date) {
+            const selectedDate = new Date(date as string);
+            if (isNaN(selectedDate.getTime())) {
+                return res.status(400).json({ data: "Invalid date format", status: 400 });
+            }
+
+            // Match payments within the selected date (from 00:00 to 23:59)
+            queryConditions.payment_date = {
+                $gte: new Date(selectedDate.setHours(0, 0, 0, 0)),  // Start of the day
+                $lt: new Date(selectedDate.setHours(23, 59, 59, 999)) // End of the day
+            };
+        }
         
         // If center is provided, filter by center
         if (center) {
@@ -1216,6 +1230,11 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+// get all reports
+
+
 
 
 

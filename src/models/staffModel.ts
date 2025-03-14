@@ -4,6 +4,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 // Define interface
 interface Certificate{
+    _id: Types.ObjectId,
     name: string,
     url: string
 }
@@ -39,7 +40,7 @@ const StaffShema: Schema = new Schema({
         type: String,
     },
     certificate:[{
-        // _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
+        _id: { type: Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
         name: {
             type: String,
             default: ''
