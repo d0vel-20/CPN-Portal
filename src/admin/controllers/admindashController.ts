@@ -1232,7 +1232,7 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
 };
 
 
-// get all reports
+// delete reciept
 
 
 

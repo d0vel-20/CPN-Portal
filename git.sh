@@ -1,5 +1,5 @@
 git add .
 
-git commit -m "create report, delete staff certificate"
+git commit -m "delete payment, edit payment"
 
 git push origin main
