@@ -1,5 +1,5 @@
 import express from 'express';
-import { createCenter, editCenter, deleteCenter, getAllCenters, getCenterById, createManager, getAllManagers, deleteManager, getManagerById, editManager,  createCourse, editCourse, getAllCourses, getCourseById, deleteCourse, adminGetAllStaff, adminGetOneStaff, adminGetAllStudents, adminGetOneStudent, deleteStudent, getAllInvoices, getAllPayments, getPaymentById, getInvoiceById, getPaymentsByStudentId, cleanupOrphanedPaymentsAndPlans, cleanupOrphanedInvoices } from '../controllers/admindashController';
+import { createCenter, editCenter, deleteCenter, getAllCenters, getCenterById, createManager, getAllManagers, deleteManager, getManagerById, editManager,  createCourse, editCourse, getAllCourses, getCourseById, deleteCourse, adminGetAllStaff, adminGetOneStaff, adminGetAllStudents, adminGetOneStudent, deleteStudent, getAllInvoices, getAllPayments, getPaymentById, getInvoiceById, getPaymentsByStudentId, cleanupOrphanedPaymentsAndPlans, cleanupOrphanedInvoices, deleteStudentPayment } from '../controllers/admindashController';
 import verifyToken  from '../../middlewares/authMiddleware';
 const router = express.Router();
 
@@ -47,6 +47,7 @@ router.get("/plan/invoice/:id", verifyToken, getInvoiceById);
 router.get("/student/payments", verifyToken, getAllPayments);
 router.get("/student/payment/:id", verifyToken, getPaymentById);
 router.get('/payments/student/:id', verifyToken, getPaymentsByStudentId);
+router.delete("/student/payment/:id", verifyToken, deleteStudentPayment);
 
 // orphaned clearance
 

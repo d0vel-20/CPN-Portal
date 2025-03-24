@@ -24,7 +24,6 @@ import {
   uploadStaffCertificate,
   deleteStaffCertificate,
   createReport,
-  deleteStudentPayment,
   editPayment
 } from "../../managers/controllers/managersdashController";
 import verifyToken from "../../middlewares/authMiddleware";
@@ -62,7 +61,6 @@ router.delete("/plan/invoice/:id", verifyToken, deleteInvoice);
 router.post("/students/:id/payment", verifyToken, addPayment);
 router.get("/student/payments", verifyToken, getAllPayments);
 router.get("/student/payment/:id", verifyToken, getPaymentById);
-router.delete("/student/payment/:id", verifyToken, deleteStudentPayment);
 router.patch("/student/payment/:id", verifyToken, editPayment)
 router.get('/payments/student/:id', verifyToken, getPaymentsByStudentId);
 router.get('/payments/balance/:id', verifyToken, getPlanBalance);

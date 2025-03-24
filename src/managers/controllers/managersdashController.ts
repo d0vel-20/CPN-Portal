@@ -935,36 +935,7 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
   }
 };
 
-// delete students payment
-export const deleteStudentPayment = async (req:Request, res: Response) =>{
-  const {id}  = req.params;
 
-  try {
-    const user = await getUser(req);
-    if (!user || user.isAdmin) {
-      return res.status(401).json({ data: "Unauthorized", status: 401 });
-    }
-
-    const payment = await Payment.findByIdAndDelete(id);
-    if (!payment) {
-      return res.status(404).json({
-        data: "Payment not found",
-        status: 404,
-      });
-    }
-
-    res.status(200).json({
-      data: "Payment Deleted Successfully",
-      status: 200,
-    })
-  } catch (error) {
-    console.log("Error deleting Student:", error)
-    res.status(500).json({
-      error: "Error deleting the payment",
-      details: error,
-    });
-  };
-}
 
 // edit payment
 export const editPayment = async (req: Request, res:Response)=>{
