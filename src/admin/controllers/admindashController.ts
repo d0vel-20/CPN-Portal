@@ -990,8 +990,8 @@ export const getAllInvoices = async (req: Request, res: Response) => {
 
             // Match payments within the selected date (from 00:00 to 23:59)
             queryConditions.payment_date = {
-                $gte: new Date(selectedDate.setHours(0, 0, 0, 0)),  // Start of the day
-                $lt: new Date(selectedDate.setHours(23, 59, 59, 999)) // End of the day
+                $gte: new Date(selectedDate.setHours(0, 0, 0, 0)),  
+                $lt: new Date(selectedDate.setHours(23, 59, 59, 999)) 
             };
         }
         
@@ -1242,7 +1242,7 @@ export const getPaymentsByStudentId = async (req: Request, res: Response) => {
           }]
         },
       ],
-    });
+    }).sort( {payment_date: -1});
 
     // if (payments.length === 0) {
     //   return res.status(404).json({
